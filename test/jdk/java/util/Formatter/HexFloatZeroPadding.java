@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,29 @@
  * questions.
  */
 
-import jdk.test.lib.apps.LingeredApp;
-
 /**
- * This is a wrapper around LingeredApp.main to ensure we reliably get a
- * compiled main nmethod in the stack trace on all platforms when using
- * -Xcomp.
+ * @test
+ * @bug 8262351
+ * @summary Incorrect zero padding occurs in the presence of some leading sign
+ * flags for hexadecimal floating point conversions.
+ * @run testng HexFloatZeroPadding
  */
-public class LingeredAppWithTrivialMain extends LingeredApp {
-    public static void main(String args[]) {
-        LingeredApp.main(args);
+
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
+
+@Test
+public class HexFloatZeroPadding {
+
+    public void testCorrectWidthHexFloatZeroPadding()
+    {
+        final int EXPECTEDLENGTH = 12;
+        assertEquals(String.format("|%010a|", 0.0).length(), EXPECTEDLENGTH);
+        assertEquals(String.format("|% 010a|", 0.0).length(), EXPECTEDLENGTH);
+        assertEquals(String.format("|%+010a|", 0.0).length(), EXPECTEDLENGTH);
+        assertEquals(String.format("|%010a|", -0.0).length(), EXPECTEDLENGTH);
+        assertEquals(String.format("|% 010a|", -0.0).length(), EXPECTEDLENGTH);
+        assertEquals(String.format("|%+010a|", -0.0).length(), EXPECTEDLENGTH);
     }
- }
+
+}
