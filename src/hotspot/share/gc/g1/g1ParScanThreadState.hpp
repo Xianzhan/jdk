@@ -38,6 +38,7 @@
 #include "utilities/ticks.hpp"
 
 class G1CardTable;
+class G1EvacFailureRegions;
 class G1EvacuationRootClosures;
 class G1OopStarChunkedList;
 class G1PLABAllocator;
@@ -133,7 +134,7 @@ public:
 
   // Apply the post barrier to the given reference field. Enqueues the card of p
   // if the barrier does not filter out the reference for some reason (e.g.
-  // p and q are in the same region, p is in survivor, p is in collection set)
+  // p and q are in the same region, p is in survivor)
   // To be called during GC if nothing particular about p and obj are known.
   template <class T> void write_ref_field_post(T* p, oop obj);
 
