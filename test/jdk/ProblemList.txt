@@ -496,7 +496,6 @@ java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
 java/lang/ProcessBuilder/PipelineLeaksFD.java                   8291760 linux-all
-jdk/internal/misc/TerminatingThreadLocal/TestTerminatingThreadLocal.java 8292051 generic-all
 
 ############################################################################
 
@@ -557,7 +556,7 @@ java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc6
 
 # jdk_nio
 
-java/nio/channels/DatagramChannel/Unref.java                    8233519 generic-all
+java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
