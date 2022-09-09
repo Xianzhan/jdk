@@ -115,7 +115,7 @@ class InvokeMethodKey : public StackObj {
 
 ResourceHashtable<InvokeMethodKey, Method*, 139, ResourceObj::C_HEAP, mtClass,
                   InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
-ResourceHashtable<Symbol*, OopHandle, 139, ResourceObj::C_HEAP, mtClass> _invoke_method_type_table;
+ResourceHashtable<SymbolHandle, OopHandle, 139, ResourceObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;
@@ -365,12 +365,12 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
   return k;
 }
 
-static inline void log_circularity_error(Thread* thread, PlaceholderEntry* probe) {
+static inline void log_circularity_error(Symbol* name, PlaceholderEntry* probe) {
   LogTarget(Debug, class, load, placeholders) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm(thread);
+    ResourceMark rm;
     LogStream ls(lt);
-    ls.print("ClassCircularityError detected for placeholder ");
+    ls.print("ClassCircularityError detected for placeholder entry %s", name->as_C_string());
     probe->print_on(&ls);
     ls.cr();
   }
@@ -442,7 +442,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
       // Must check ClassCircularity before checking if superclass is already loaded.
       PlaceholderEntry* probe = PlaceholderTable::get_entry(class_name, loader_data);
       if (probe && probe->check_seen_thread(THREAD, PlaceholderTable::LOAD_SUPER)) {
-          log_circularity_error(THREAD, probe);
+          log_circularity_error(class_name, probe);
           throw_circularity_error = true;
       }
     }
@@ -562,7 +562,7 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
     // only need check_seen_thread once, not on each loop
     // 6341374 java/lang/Instrument with -Xcomp
     if (oldprobe->check_seen_thread(current, PlaceholderTable::LOAD_INSTANCE)) {
-      log_circularity_error(current, oldprobe);
+      log_circularity_error(name, oldprobe);
       *throw_circularity_error = true;
       return NULL;
     } else {
@@ -1042,8 +1042,13 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
   assert(scp_index >= 0, "must be");
   SharedClassPathEntry* scp_entry = FileMapInfo::shared_path(scp_index);
   if (!Universe::is_module_initialized()) {
-    assert(scp_entry != NULL && scp_entry->is_modules_image(),
-           "Loading non-bootstrap classes before the module system is initialized");
+    assert(scp_entry != NULL, "must be");
+    // At this point, no modules have been defined yet. KlassSubGraphInfo::check_allowed_klass()
+    // has restricted the classes can be loaded at this step to be only:
+    // [1] scp_entry->is_modules_image(): classes in java.base, or,
+    // [2] HeapShared::is_a_test_class_in_unnamed_module(ik): classes in bootstrap/unnamed module
+    assert(scp_entry->is_modules_image() || HeapShared::is_a_test_class_in_unnamed_module(ik),
+           "only these classes can be loaded before the module system is initialized");
     assert(class_loader.is_null(), "sanity");
     return true;
   }
@@ -2036,47 +2041,46 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
                                                        Symbol* signature,
                                                        TRAPS) {
 
-  methodHandle empty;
   const int iid_as_int = vmIntrinsics::as_int(iid);
   assert(MethodHandles::is_signature_polymorphic(iid) &&
          MethodHandles::is_signature_polymorphic_intrinsic(iid) &&
          iid != vmIntrinsics::_invokeGeneric,
          "must be a known MH intrinsic iid=%d: %s", iid_as_int, vmIntrinsics::name_at(iid));
 
-  Method** met;
-  InvokeMethodKey key(signature, iid_as_int);
   {
     MutexLocker ml(THREAD, InvokeMethodTable_lock);
-    met = _invoke_method_intrinsic_table.get(key);
+    InvokeMethodKey key(signature, iid_as_int);
+    Method** met = _invoke_method_intrinsic_table.get(key);
     if (met != nullptr) {
       return *met;
     }
+
+    bool throw_error = false;
+    // This function could get an OOM but it is safe to call inside of a lock because
+    // throwing OutOfMemoryError doesn't call Java code.
+    methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
+    if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
+        // Generate a compiled form of the MH intrinsic
+        // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
+        AdapterHandlerLibrary::create_native_wrapper(m);
+        // Check if have the compiled code.
+        throw_error = (!m->has_compiled_code());
+    }
+
+    if (!throw_error) {
+      signature->make_permanent(); // The signature is never unloaded.
+      bool created = _invoke_method_intrinsic_table.put(key, m());
+      assert(created, "must be since we still hold the lock");
+      assert(Arguments::is_interpreter_only() || (m->has_compiled_code() &&
+             m->code()->entry_point() == m->from_compiled_entry()),
+             "MH intrinsic invariant");
+      return m();
+    }
   }
 
-  methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
-  if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
-      // Generate a compiled form of the MH intrinsic
-      // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
-      AdapterHandlerLibrary::create_native_wrapper(m);
-      // Check if have the compiled code.
-      if (!m->has_compiled_code()) {
-        THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
-                       "Out of space in CodeCache for method handle intrinsic");
-      }
-  }
-  // Now grab the lock.  We might have to throw away the new method,
-  // if a racing thread has managed to install one at the same time.
-  {
-    MutexLocker ml(THREAD, InvokeMethodTable_lock);
-    signature->make_permanent(); // The signature is never unloaded.
-    bool created;
-    met = _invoke_method_intrinsic_table.put_if_absent(key, m(), &created);
-    Method* saved_method = *met;
-    assert(Arguments::is_interpreter_only() || (saved_method->has_compiled_code() &&
-         saved_method->code()->entry_point() == saved_method->from_compiled_entry()),
-         "MH intrinsic invariant");
-    return saved_method;
-  }
+  // Throw error outside of the lock.
+  THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
+                 "Out of space in CodeCache for method handle intrinsic");
 }
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
