@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +22,18 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.coordinator.actions;
 
-import com.sun.hotspot.igv.data.InputGraph;
-import com.sun.hotspot.igv.data.services.GraphViewer;
-import org.openide.nodes.Node;
+#ifndef SHARE_SERVICES_MEMTRACKER_INLINE_HPP
+#define SHARE_SERVICES_MEMTRACKER_INLINE_HPP
 
-public class GraphCloneCookie implements Node.Cookie {
+#include "services/mallocTracker.inline.hpp"
+#include "services/memTracker.hpp"
 
-    private final GraphViewer viewer;
-    private final InputGraph graph;
-
-    public GraphCloneCookie(GraphViewer viewer, InputGraph graph) {
-        this.viewer = viewer;
-        this.graph = graph;
-    }
-
-    public void openClone() {
-        viewer.view(graph, true);
-    }
+inline bool MemTracker::check_exceeds_limit(size_t s, MEMFLAGS f) {
+  if (!enabled()) {
+    return false;
+  }
+  return MallocTracker::check_exceeds_limit(s, f);
 }
+
+#endif // SHARE_SERVICES_MEMTRACKER_INLINE_HPP
