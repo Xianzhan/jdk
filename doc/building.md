@@ -2,15 +2,26 @@
 
 ## TL;DR (Instructions for the Impatient)
 
+简介（急躁者须知）
+
 If you are eager to try out building the JDK, these simple steps works most of
 the time. They assume that you have installed Git (and Cygwin if running
 on Windows) and cloned the top-level JDK repository that you want to build.
 
+如果您渴望尝试构建 JDK，那么这些简单的步骤在大多数情况下都有效。
+它们假设您已经安装了 Git(如果在 Windows 上运行，则安装了 Cygwin)并克隆了您想要构建的顶级 JDK 存储库。
+
  1. [Get the complete source code](#getting-the-source-code): \
     `git clone https://git.openjdk.org/jdk/`
 
+    获取完整的源代码: \
+    `git clone https://git.openjdk.org/jdk/`
+
  2. [Run configure](#running-configure): \
     `bash configure`
+
+    [运行 `configure`](#running-configure): \
+    `bash configure`
 
     If `configure` fails due to missing dependencies (to either the
     [toolchain](#native-compiler-toolchain-requirements), [build tools](
@@ -20,17 +31,30 @@ on Windows) and cloned the top-level JDK repository that you want to build.
     your platform. Follow the instructions, and try running `bash configure`
     again.
 
+    如果 `configure` 由于缺少依赖项(工具链、构建工具、外部库或引导 JDK)而失败，大多数情况下它会打印一个关于如何解决您的平台上的情况的建议。按照说明操作，并尝试再次运行 `bash configure`。
+
  3. [Run make](#running-make): \
+    `make images`
+
+    [运行 make](#running-make): \
     `make images`
 
  4. Verify your newly built JDK: \
     `./build/*/images/jdk/bin/java -version`
 
+    验证你新构建的 JDK: \
+    `./build/*/images/jdk/bin/java -version`
+
  5. [Run basic tests](##running-tests): \
+    `make run-test-tier1`
+
+    [运行基础测试](##running-tests): \
     `make run-test-tier1`
 
 If any of these steps failed, or if you want to know more about build
 requirements or build functionality, please continue reading this document.
+
+如果这些步骤都失败了，或者您想了解更多关于构建需求或构建功能的信息，请继续阅读本文档。
 
 ## Introduction
 
