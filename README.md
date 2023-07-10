@@ -3,6 +3,10 @@
 
 [JEP draft: JDK Source Structure](https://openjdk.org/jeps/8283227)<br/>
 
+## doc
+
+[doc/building 构建 JDK](doc/building.md)
+
 ## Hotspot
 
 [src/hotspot](src/hotspot/readme.md)<br/>
