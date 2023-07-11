@@ -1,11 +1,15 @@
 
-# JDK 源码结构
+# JDK
 
 [JEP draft: JDK Source Structure](https://openjdk.org/jeps/8283227)<br/>
 
 ## doc
 
-[doc/building 构建 JDK](doc/building.md)
+[doc/building 构建 JDK 文档](doc/building.md)
+
+## make
+
+[JDK 构建脚本](make/readme.md)
 
 ## Hotspot
 
@@ -17,7 +21,12 @@
 
 ## Module
 
-[Project Jigsaw](https://openjdk.org/projects/jigsaw/)<br/>
+[Project Jigsaw](https://openjdk.org/projects/jigsaw/)
+
+### java.base
+
+`java Main` 启动\
+[launcher 启动](src/java.base/share/native/launcher/readme.md)
 
 ## utils
 
