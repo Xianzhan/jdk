@@ -241,6 +241,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     int ret;
     InvocationFunctions ifn;
     jlong start = 0, end = 0;
+    // JVM 的路径
     char jvmpath[MAXPATHLEN];
     char jdkroot[MAXPATHLEN];
     char jvmcfg[MAXPATHLEN];
@@ -251,6 +252,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     _is_java_args = javaargs;
     _wc_enabled = cpwildcard;
 
+    // 根据 _JAVA_LAUNCHER_DEBUG 环境变量判断是否打印 debug 信息
     InitLauncher(javaw);
     DumpState();
     if (JLI_IsTraceLauncher()) {
@@ -270,6 +272,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         AddOption("-Dsun.java.launcher.diag=true", NULL);
     }
 
+    // 创建 JVM 执行环境，确定数据模型，如 32/64 位 jvm
     CreateExecutionEnvironment(&argc, &argv,
                                jdkroot, sizeof(jdkroot),
                                jvmpath, sizeof(jvmpath),
@@ -282,6 +285,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         start = CurrentTimeMicros();
     }
 
+    // 加载 libjvm 动态链接库
     if (!LoadJavaVM(jvmpath, &ifn)) {
         return(6);
     }
@@ -311,6 +315,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
     /* Parse command line options; if the return value of
      * ParseArguments is false, the program should exit.
+     * 解析命令行参数；若参数如 '--help' 之类的则返回 true 退出程序
      */
     if (!ParseArguments(&argc, &argv, &mode, &what, &ret)) {
         return(ret);
@@ -327,6 +332,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     /* Set the -Dsun.java.launcher pseudo property */
     SetJavaLauncherProp();
 
+    // JVM 初始化后启动
     return JVMInit(&ifn, threadStackSize, argc, argv, mode, what, ret);
 }
 /*
