@@ -243,8 +243,11 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     int ret;
     InvocationFunctions ifn;
     jlong start = 0, end = 0;
+    // JVM 的路径
     char jvmpath[MAXPATHLEN];
+    // JRE 的路径
     char jrepath[MAXPATHLEN];
+    // JVM 配置的路径
     char jvmcfg[MAXPATHLEN];
 
     _fVersion = fullversion;
@@ -253,6 +256,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     _is_java_args = javaargs;
     _wc_enabled = cpwildcard;
 
+    // 根据 _JAVA_LAUNCHER_DEBUG 环境变量判断是否打印 debug 信息
     InitLauncher(javaw);
     DumpState();
     if (JLI_IsTraceLauncher()) {
@@ -270,16 +274,22 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
     /*
      * SelectVersion() has several responsibilities:
+     * SelectVersion() 有几个职责:
      *
      *  1) Disallow specification of another JRE.  With 1.9, another
      *     version of the JRE cannot be invoked.
+     *  1) 禁止指定其他 JRE。1.9 是另一个无法调用 JRE 版本。
+     * 
      *  2) Allow for a JRE version to invoke JDK 1.9 or later.  Since
      *     all mJRE directives have been stripped from the request but
      *     the pre 1.9 JRE [ 1.6 thru 1.8 ], it is as if 1.9+ has been
      *     invoked from the command line.
+     *  2) 允许 JRE 版本调用 JDK 1.9 或更高版本。
+     *     自所有 mJRE 指令都已从请求中剥离，但是 1.9 之前的 JRE[1.6 到 1.8]，就像 1.9+ 一样从命令行调用。
      */
     SelectVersion(argc, argv, &main_class);
 
+    // 创建 JVM 执行环境，确定数据模型，如 32/64 位 jvm
     CreateExecutionEnvironment(&argc, &argv,
                                jrepath, sizeof(jrepath),
                                jvmpath, sizeof(jvmpath),
@@ -292,6 +302,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         start = CurrentTimeMicros();
     }
 
+    // 加载 libjvm 动态链接库
     if (!LoadJavaVM(jvmpath, &ifn)) {
         return(6);
     }
@@ -321,6 +332,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
     /* Parse command line options; if the return value of
      * ParseArguments is false, the program should exit.
+     * 解析命令行参数；若参数如 '--help' 之类的则返回 true 退出程序
      */
     if (!ParseArguments(&argc, &argv, &mode, &what, &ret, jrepath)) {
         return(ret);
@@ -337,6 +349,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     /* Set the -Dsun.java.launcher pseudo property */
     SetJavaLauncherProp();
 
+    // JVM 初始化后启动
     return JVMInit(&ifn, threadStackSize, argc, argv, mode, what, ret);
 }
 /*
