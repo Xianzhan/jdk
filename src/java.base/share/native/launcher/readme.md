@@ -1,15 +1,23 @@
+[`main.c`](main.c)
 
-`java Main` 最开始的代码即从 [`main.c`](main.c) 代码开始, \
-将传参保存到 [JLI_List_](../libjli/jli_util.h) 结构体里, \
-然后执行真正的启动函数 [JLI_Launch](main.c)
+1. 执行 [JLI_List_new](../libjli/jli_util.c) 创建 [JLI_List args](../libjli/jli_util.h) 结构体保存命令行参数
+2. [JLI_List_add](../libjli/jli_util.c)添加 C 参数到 Java 参数列表
+3. [JLI_AddArgsFromEnvVar](../libjli/args.c) 从环境变量 [`JDK_JAVA_OPTIONS`](../libjli/java.h) 获取 java 参数
+4. [JLI_PreprocessArg](../libjli/args.c) 解析 C 参数, 若参数以 `@` 开头, 则保存到临时列表 `JLI_List argsInFile` 后遍历保存到 `args`; 否则直接添加到 `args`
+5. [`JLI_Launch`](../libjli/java.c) 启动 JVM
+
 
 ```mermaid
 sequenceDiagram
     participant main.c
+    participant jli_util.c
     participant args.c
     participant java.c
 
-    main.c->>args.c: JLI_InitArgProcessing
+    main.c->>jli_util.c: JLI_List_new
+    main.c->>jli_util.c: JLI_List_add
+    main.c->>args.c: JLI_AddArgsFromEnvVar
+    main.c->>args.c: JLI_PreprocessArg
     main.c->>java.c: JLI_Launch
 ```
 
