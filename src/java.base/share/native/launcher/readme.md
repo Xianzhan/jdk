@@ -1,11 +1,10 @@
-[`main.c`](main.c)
+[`main.c#main`](main.c)
 
 1. 执行 [JLI_List_new](../libjli/jli_util.c) 创建 [JLI_List args](../libjli/jli_util.h) 结构体保存命令行参数
 2. [JLI_List_add](../libjli/jli_util.c)添加 C 参数到 Java 参数列表
 3. [JLI_AddArgsFromEnvVar](../libjli/args.c) 从环境变量 [`JDK_JAVA_OPTIONS`](../libjli/java.h) 获取 java 参数
 4. [JLI_PreprocessArg](../libjli/args.c) 解析 C 参数, 若参数以 `@` 开头, 则保存到临时列表 `JLI_List argsInFile` 后遍历保存到 `args`; 否则直接添加到 `args`
 5. [`JLI_Launch`](../libjli/java.c) 启动 JVM
-
 
 ```mermaid
 sequenceDiagram
@@ -21,32 +20,30 @@ sequenceDiagram
     main.c->>java.c: JLI_Launch
 ```
 
-JLI_Launch:
-1. InitLauncher
-2. DumpState
-3. SelectVersion
-4. CreateExecutionEnvironment
-5. LoadJavaVM
-6. ParseArguments
-7. JVMInit
-8. ShowSplashScreen
-9. ContinueInNewThread
+[`java.c#JLI_Launch`](../libjli/java.c)
+
+1. [InitLauncher](../../../unix/native/libjli/java_md_common.c) 初始化启动器
+2. [DumpState](../libjli/java.c) 根据初始化判断是否打印信息
+3. [SelectVersion](../libjli/java.c) 确保有合适的 JRE 运行
+4. [CreateExecutionEnvironment](../../../unix/native/libjli/java_md.c) 创建执行环境
+5. [LoadJavaVM](../../../unix/native/libjli/java_md.c) 加载 libjvm 动态链接库, 加载函数 `JNI_CreateJavaVM`、`JNI_GetDefaultJavaVMInitArgs`、`JNI_GetCreatedJavaVMs`并绑定 `InvocationFunctions *ifn`
+6. [ParseArguments](../libjli/java.c) 解析命令行参数
+7. [JVMInit](../libjli/java.c) JVM 初始化
 
 ```mermaid
 sequenceDiagram
     participant java.c
+    participant java_md_common.c
     participant java_md.c
 
     java.c->>java.c: InvocationFunctions ifn
-    java.c->>java.c: InitLauncher
+    java.c->>java_md_common.c: InitLauncher
     java.c->>java.c: DumpState
     java.c->>java.c: SelectVersion
-    java.c->>java.c: CreateExecutionEnvironment
+    java.c->>java_md.c: CreateExecutionEnvironment
     java.c->>java.c: LoadJavaVM
     java.c->>java.c: ParseArguments
     java.c->>java_md.c: JVMInit
-    java_md.c->>java_md.c: ShowSplashScreen 平台相关
-    java_md.c->>java.c: ContinueInNewThread
 ```
 
 ContinueInNewThread:
