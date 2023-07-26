@@ -46,6 +46,18 @@ sequenceDiagram
     java.c->>java_md.c: JVMInit
 ```
 
-ContinueInNewThread:
-1. GetDefaultJavaVMInitArgs 设置栈大小
-2. CallJavaMainInNewThread 在新线程调用 `main` 静态方法
+[`java_md.c#JVMInit`](../../../unix/native/libjli/java_md.c)
+
+1. [ShowSplashScreen](../libjli/java.c) Swing/AWT 相关
+2. [ContinueInNewThread](../libjli/java.c) 初始化线程栈, 然后使用新线程执行 Java 的 `public static void main(String[])` 方法
+
+```mermaid
+sequenceDiagram
+    participant java_md.c
+    participant java.c
+
+
+    java_md.c->>java.c: ShowSplashScreen
+    java_md.c->>java.c: ContinueInNewThread
+```
+
