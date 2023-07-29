@@ -548,9 +548,14 @@ void Bytecodes::initialize() {
   // initialize bytecode tables - didn't use static array initializers
   // (such as {}) so we can do additional consistency checks and init-
   // code is independent of actual bytecode numbering.
+  // 初始化字节码表-不使用静态数组初始化器
+  // (例如{})，这样我们可以做额外的一致性检查和 init-
+  // 代码独立于实际字节码编号。
   //
   // Note 1: The result type is T_ILLEGAL for bytecodes where the top of stack
   //         type after execution is not only determined by the bytecode itself.
+  // 注1: 结果类型是 T_ILLEGAL 的字节码的堆栈顶部
+  //      执行后的类型不仅由字节码本身决定。
 
 #define BYTECODE(code, name, format, wide_format, result_type, depth, can_trap, java_code)  \
   assert(strcmp(_name[code], name) == 0, "bytecode name mismatch");                         \
@@ -566,6 +571,9 @@ void Bytecodes::initialize() {
   // compare can_trap information for each bytecode with the
   // can_trap information for the corresponding base bytecode
   // (if a rewritten bytecode can trap, so must the base bytecode)
+  // 将每个字节码的 can_trap 信息与
+  // 对应基字节码的 can_trap 信息
+  // (如果重写的字节码可以捕获，那么基字节码也必须捕获)
   #ifdef ASSERT
     { for (int i = 0; i < number_of_codes; i++) {
         if (is_defined(i)) {

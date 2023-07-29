@@ -435,6 +435,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   create_vm_timer.start();
 
   // Initialize system properties.
+  // 初始化系统属性。
   Arguments::init_system_properties();
 
   // So that JDK version can be used as a discriminator when parsing arguments
@@ -506,6 +507,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   _number_of_non_daemon_threads = 0;
 
   // Initialize global data structures and create system classes in heap
+  // 初始化全局数据结构并在堆中创建系统类
   vm_init_globals();
 
 #if INCLUDE_JVMCI
@@ -547,6 +549,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   ObjectSynchronizer::initialize();
 
   // Initialize global modules
+  // 初始化全局模块
   jint status = init_globals();
   if (status != JNI_OK) {
     main_thread->smr_delete();

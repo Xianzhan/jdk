@@ -3541,16 +3541,25 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 
   // At the moment it's only possible to have one Java VM,
   // since some of the runtime state is in global variables.
+  // 目前只能有一个 Java 虚拟机
+  // 因为一些运行时状态是在全局变量中。
 
   // We cannot use our mutex locks here, since they only work on
   // Threads. We do an atomic compare and exchange to ensure only
   // one thread can call this method at a time
+  // 我们不能在这里使用互斥锁，因为它们只作用于
+  // 线程。我们只进行原子比较和交换以确保
+  // 一个线程一次可以调用这个方法
 
   // We use Atomic::xchg rather than Atomic::add/dec since on some platforms
   // the add/dec implementations are dependent on whether we are running
   // on a multiprocessor Atomic::xchg does not have this problem.
+  // 在某些平台上，我们使用 Atomic::xchg 而不是 Atomic::add/dec
+  // add/dec 的实现取决于我们是否正在运行
+  // 在多处理器上，Atomic::xchg 没有这个问题。
   if (Atomic::xchg(&vm_created, IN_PROGRESS) != NOT_CREATED) {
     return JNI_EEXIST;   // already created, or create attempt in progress
+                         // 已经创建，或者正在尝试创建
   }
 
   // If a previous creation attempt failed but can be retried safely,
@@ -3558,6 +3567,11 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
   // cleared here. If a previous creation attempt succeeded and we then
   // destroyed that VM, we will be prevented from trying to recreate
   // the VM in the same process, as the value will still be 0.
+  // 如果先前的创建尝试失败，但可以安全地重试，
+  // 那么 safe_to_recreate_vm 将被重置为 1
+  // 清除这里。如果之前的创建尝试成功了，然后我们
+  // 销毁该虚拟机，我们将无法尝试重新创建
+  // 在同一进程中的虚拟机，因为该值仍然为 0。
   if (Atomic::xchg(&safe_to_recreate_vm, 0) == 0) {
     return JNI_ERR;
   }
@@ -3571,6 +3585,14 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
    * situations, the 'canTryAgain' flag is set to false, which atomically
    * sets safe_to_recreate_vm to 1, such that any new call to
    * JNI_CreateJavaVM will immediately fail using the above logic.
+   * 初始化过程中的某些错误是可恢复的，而不是不可恢复的
+   * 防止这个方法在以后被再次调用
+   * (可能有不同的论点)。然而，在某种程度上
+   * 点在初始化过程中，如果发生错误，我们不能允许
+   * 这个函数需要再次调用(否则会崩溃)。在那些
+   * 的情况下，'canTryAgain' 标志被设置为 false，这是自动的
+   * 设置 safe_to_recreate_vm 为 1，这样任何新的调用
+   * 使用上述逻辑，JNI_CreateJavaVM 将立即失败。
    */
   bool can_try_again = true;
 
