@@ -61,3 +61,17 @@ sequenceDiagram
     java_md.c->>java.c: ContinueInNewThread
 ```
 
+[`java.c#ContinueInNewThread`](../libjli/java.c)
+
+1. [ifn->GetDefaultJavaVMInitArgs](../../../../hotspot/share/prims/jni.cpp) 设置栈大小, 1.1 版本后不支持, 忽略
+2. [CallJavaMainInNewThread](../../../unix/native/libjli/java_md.c) 阻塞当前线程创建新线程, 在新线程调用 `main` 静态方法
+
+```mermaid
+sequenceDiagram
+    participant java.c
+    participant jni.cpp
+    participant java_md.c
+
+    java.c->>jni.cpp: ifn->GetDefaultJavaVMInitArgs
+    java.c->>java_md.c: CallJavaMainInNewThread
+```
