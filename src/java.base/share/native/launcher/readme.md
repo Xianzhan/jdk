@@ -75,3 +75,18 @@ sequenceDiagram
     java.c->>jni.cpp: ifn->GetDefaultJavaVMInitArgs
     java.c->>java_md.c: CallJavaMainInNewThread
 ```
+
+[`java_md.c#CallJavaMainInNewThread`](../../../unix/native/libjli/java_md.c)
+
+1. `pthread_attr_setguardsize(&attr, 0)` 获得线程栈末尾的警戒缓冲区大小
+2. `pthread_create(&tid, &attr, ThreadJavaMain, args)` 创建新线程, 执行 `ThreadJavaMain` 逻辑
+    1. `ThreadJavaMain` -> `JavaMain`
+    2. `JavaMain` -> `InvocationFunctions ifn = args->ifn;`
+    3. `JavaMain` -> `InitializeJVM` 初始化 JVM
+        1. `InitializeJVM` -> [`ifn->CreateJavaVM(pvm, (void **)penv, &args);`](../../../../hotspot/share/prims/readme.md) 创建 JVM
+    4. `JavaMain` -> `LoadMainClass` 加载 main 类
+    5. `JavaMain` -> `(*env)->GetStaticMethodID(env, mainClass, "main", "([Ljava/lang/String;)V");` 获取 main 方法
+    6. `JavaMain` -> `(*env)->CallStaticVoidMethod(env, mainClass, mainID);` 执行 main 方法
+3. `pthread_join(tid, &tmp)` 当前线程等待新线程完成
+
+此处, JVM 就完成初始化并执行 Java 的 `public static void main(String[])` 方法。
