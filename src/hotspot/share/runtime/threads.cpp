@@ -817,7 +817,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (DumpSharedSpaces) {
     MetaspaceShared::preload_and_dump();
-    ShouldNotReachHere();
   }
 
   return JNI_OK;
