@@ -1,3 +1,5 @@
+HotSpot 对外接口
+
 [jni.cpp#JNI_CreateJavaVM](./jni.cpp)
 
 1. [JNI_CreateJavaVM_inner](./jni.cpp) 内部创建 JVM

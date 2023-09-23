@@ -13,11 +13,7 @@
 
 ## Hotspot
 
-[src/hotspot](src/hotspot/readme.md)<br/>
-[src/hotspot/share](src/hotspot/share/readme.md)<br/>
-[src/hotspot/cpu](src/hotspot/cpu/readme.md)<br/>
-[src/hotspot/os](src/hotspot/os/readme.md)<br/>
-[src/hotspot/os_cpu](src/hotspot/os_cpu/readme.md)<br/>
+[src/hotspot](./src/hotspot/readme.md): HotSpot 源码
 
 ## Module
 
