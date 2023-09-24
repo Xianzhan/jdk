@@ -216,6 +216,8 @@ class JavaCalls: AllStatic {
   // call_special
   // ------------
   // The receiver must be first oop in argument list
+  // 使用如下函数调用Java中一些特殊的方法，如类初始化方法 <clinit> 等
+  // receiver 表示方法的接收者，如 A.main() 调用中，A 就是方法的接收者
   static void call_special(JavaValue* result, Klass* klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS);
 
   static void call_special(JavaValue* result, Handle receiver, Klass* klass, Symbol* name, Symbol* signature, TRAPS); // No args
@@ -226,6 +228,7 @@ class JavaCalls: AllStatic {
   // ------------
 
   // The receiver must be first oop in argument list
+  // 使用如下函数调用动态分派的一些方法
   static void call_virtual(JavaValue* result, Klass* spec_klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS);
 
   static void call_virtual(JavaValue* result, Handle receiver, Klass* spec_klass, Symbol* name, Symbol* signature, TRAPS); // No args
@@ -234,6 +237,7 @@ class JavaCalls: AllStatic {
 
   // Static call
   // -----------
+  // 使用如下函数调用 Java 静态方法
   static void call_static(JavaValue* result, Klass* klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS);
 
   static void call_static(JavaValue* result, Klass* klass, Symbol* name, Symbol* signature, TRAPS);
@@ -249,6 +253,7 @@ class JavaCalls: AllStatic {
   static Handle construct_new_instance(InstanceKlass* klass, Symbol* constructor_signature, Handle arg1, Handle arg2, TRAPS);
 
   // Low-level interface
+  // 更低一层的接口，如上的一些函数可能会最终调用到如下这个函数
   static void call(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS);
 };
 
