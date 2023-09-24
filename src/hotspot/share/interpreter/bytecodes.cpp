@@ -557,6 +557,11 @@ void Bytecodes::initialize() {
   // 注1: 结果类型是 T_ILLEGAL 的字节码的堆栈顶部
   //      执行后的类型不仅由字节码本身决定。
 
+// code: 字节码值
+// name: 字节码名称
+// format: 字节码格式长度
+// result_type: 字节码指令执行后的结果类型
+// depth: 字节码栈的深度
 #define BYTECODE(code, name, format, wide_format, result_type, depth, can_trap, java_code)  \
   assert(strcmp(_name[code], name) == 0, "bytecode name mismatch");                         \
   assert(_result_type[code] == result_type, "bytecode result_type mismatch");               \
