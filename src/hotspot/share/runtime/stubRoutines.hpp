@@ -299,10 +299,20 @@ class StubRoutines: AllStatic {
 
   // Calls to Java
   typedef void (*CallStub)(
+    // 连接器
     address   link,
+    // 函数返回值地址
     intptr_t* result,
+    // 函数返回类型
     int       result_type, /* BasicType on 4 bytes */
+    // JVM 内部所表示的 Java 方法对象
     Method* method,
+    // JVM 调用 Java 方法的例程入口。
+    // JVM 内部的每一段例程都是在 JVM 启动过
+    // 程中预先生成好的一段机器指令。要调用 Java 方法，
+    // 必须经过本例程，即需要先执行这段机器指令，
+    // 然后才能跳转到，Java 方法字节码所对应的机器
+    // 指令去执行
     address   entry_point,
     intptr_t* parameters,
     int       size_of_parameters,
