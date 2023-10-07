@@ -2,6 +2,24 @@
 包含 Hotspot 源代码。Hotspot 代码是用 C++ 编写的。
 
 [share](./share/readme.md): 公共代码
+- adlc: 平台描述文件
+- asm: 汇编器
+- c1: C1 编译器
+- ci: 动态编译器
+- classfile: .class 文件解析和类的链接
+- code: 机器码生成
+- compiler: 调用动态编译器的接口
+- gc: GC 接口及实现
+- interpreter: 解释器
+- libadt: 抽象数据结构
+- memory: 内存管理
+- oops: JVM 内部对象表示
+- opto: C2 编译器
+- prims: HotSpot 对外接口
+- runtime: 运行时
+- services: JMX 接口
+- utilities: 内部工具类和公共函数
+
 
 # 变量
 
