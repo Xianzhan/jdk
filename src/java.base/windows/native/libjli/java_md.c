@@ -367,6 +367,9 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
 
 /*
  * Load a jvm from "jvmpath" and initialize the invocation functions.
+ * 从 "jvmpath" 加载 jvm 并初始化调用函数。
+ * JNI_CreateJavaVM
+ * JNI_GetDefaultJavaVMInitArgs
  */
 jboolean
 LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
@@ -814,7 +817,7 @@ jclass FindBootStrapClass(JNIEnv *env, const char *classname)
 }
 
 void
-InitLauncher(boolean javaw)
+InitLauncher(jboolean javaw)
 {
     INITCOMMONCONTROLSEX icx;
 
@@ -939,6 +942,7 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
         int mode, char *what, int ret)
 {
     ShowSplashScreen();
+    // 创建一个新线程执行 `public static void main(String[])` 静态方法
     return ContinueInNewThread(ifn, threadStackSize, argc, argv, mode, what, ret);
 }
 

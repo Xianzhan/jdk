@@ -75,6 +75,7 @@
 
 /*
  * Pointers to the needed JNI invocation API, initialized by LoadJavaVM.
+ * 指向所需的 JNI 调用 API 的指针，由 LoadJavaVM 初始化。
  */
 typedef jint (JNICALL *CreateJavaVM_t)(JavaVM **pvm, void **env, void *args);
 typedef jint (JNICALL *GetDefaultJavaVMInitArgs_t)(void *args);

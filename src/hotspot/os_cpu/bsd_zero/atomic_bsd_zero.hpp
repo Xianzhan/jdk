@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2011, 2015, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -75,7 +75,7 @@ static inline int m68k_compare_and_swap(int newval,
 }
 
 /* Atomically add an int to memory.  */
-static inline int m68k_add_and_fetch(int add_value, volatile int *ptr) {
+static inline int m68k_add_then_fetch(int add_value, volatile int *ptr) {
   for (;;) {
       // Loop until success.
 
@@ -136,7 +136,7 @@ static inline int arm_compare_and_swap(int newval,
 }
 
 /* Atomically add an int to memory.  */
-static inline int arm_add_and_fetch(int add_value, volatile int *ptr) {
+static inline int arm_add_then_fetch(int add_value, volatile int *ptr) {
   for (;;) {
       // Loop until a __kernel_cmpxchg succeeds.
 
@@ -163,26 +163,26 @@ static inline int arm_lock_test_and_set(int newval, volatile int *ptr) {
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
-  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
 
   template<typename D, typename I>
-  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
-    return add_and_fetch(dest, add_value, order) - add_value;
+  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return add_then_fetch(dest, add_value, order) - add_value;
   }
 };
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
-                                               atomic_memory_order order) const {
+inline D Atomic::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
+                                                atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
 
 #ifdef ARM
-  return add_using_helper<int>(arm_add_and_fetch, dest, add_value);
+  return add_using_helper<int>(arm_add_then_fetch, dest, add_value);
 #else
 #ifdef M68K
-  return add_using_helper<int>(m68k_add_and_fetch, dest, add_value);
+  return add_using_helper<int>(m68k_add_then_fetch, dest, add_value);
 #else
   D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
   FULL_MEM_BARRIER;
@@ -193,8 +193,8 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<8>::add_and_fetch(D volatile* dest, I add_value,
-                                               atomic_memory_order order) const {
+inline D Atomic::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_value,
+                                                atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
 
@@ -286,31 +286,19 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
 }
 
 // Atomically copy 64 bits of data
-static void atomic_copy64(const volatile void *src, volatile void *dst) {
-#if defined(PPC32)
-  double tmp;
-  asm volatile ("lfd  %0, 0(%1)\n"
-                "stfd %0, 0(%2)\n"
-                : "=f"(tmp)
-                : "b"(src), "b"(dst));
-#elif defined(S390) && !defined(_LP64)
-  double tmp;
-  asm volatile ("ld  %0, 0(%1)\n"
-                "std %0, 0(%2)\n"
-                : "=r"(tmp)
-                : "a"(src), "a"(dst));
-#else
-  *(jlong *) dst = *(const jlong *) src;
-#endif
+inline void atomic_copy64(const volatile void *src, volatile void *dst) {
+  int64_t tmp;
+  __atomic_load(reinterpret_cast<const volatile int64_t*>(src), &tmp, __ATOMIC_RELAXED);
+  __atomic_store(reinterpret_cast<volatile int64_t*>(dst), &tmp, __ATOMIC_RELAXED);
 }
 
 template<>
 template<typename T>
 inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
   STATIC_ASSERT(8 == sizeof(T));
-  volatile int64_t dest;
-  atomic_copy64(reinterpret_cast<const volatile int64_t*>(src), reinterpret_cast<volatile int64_t*>(&dest));
-  return PrimitiveConversions::cast<T>(dest);
+  T dest;
+  __atomic_load(const_cast<T*>(src), &dest, __ATOMIC_RELAXED);
+  return dest;
 }
 
 template<>
@@ -318,7 +306,7 @@ template<typename T>
 inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
                                                  T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
-  atomic_copy64(reinterpret_cast<const volatile int64_t*>(&store_value), reinterpret_cast<volatile int64_t*>(dest));
+  __atomic_store(dest, &store_value, __ATOMIC_RELAXED);
 }
 
 #endif // OS_CPU_BSD_ZERO_ATOMIC_BSD_ZERO_HPP

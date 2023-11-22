@@ -415,12 +415,22 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
       StubRoutines::call_stub()(
         (address)&link,
         // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)
+        // 函数返回值地址
         result_val_address,          // see NOTE above (compiler problem)
+        // 函数返回类型
         result_type,
+        // 当前要执行的方法。通过此参数可以获取到 Java 方法所有的元数据信息，包括最重要的字节码信息，这样就可以根据字节码信息解释执行这个方法了
         method(),
+        // HotSpot 每次在调用 Java 函数时，必然会调用 CallStub 函数指针，
+        // 这个函数指针的值取自 _call_stub_entry，HotSpot 通过 _call_stub_entry 指向被调用函数地址。
+        // 在调用函数之前，必须要先经过 entry_point，
+        // HotSpot 实际是通过 entry_point 从 method() 对象上拿到 Java 方法对应的第1个字节码命令，这也是整个函数的调用入口
         entry_point,
+        // 描述 Java 函数的入参信息
         parameter_address,
+        // 描述 Java 函数的入参数量
         args->size_of_parameters(),
+        // 当前线程对象
         CHECK
       );
 

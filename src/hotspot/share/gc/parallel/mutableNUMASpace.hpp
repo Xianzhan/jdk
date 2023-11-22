@@ -65,9 +65,8 @@ class MutableNUMASpace : public MutableSpace {
   friend class VMStructs;
 
   class LGRPSpace : public CHeapObj<mtGC> {
-    int _lgrp_id;
+    uint _lgrp_id;
     MutableSpace* _space;
-    MemRegion _invalid_region;
     AdaptiveWeightedAverage *_alloc_rate;
     bool _allocation_failed;
 
@@ -88,7 +87,7 @@ class MutableNUMASpace : public MutableSpace {
     char* last_page_scanned()            { return _last_page_scanned; }
     void set_last_page_scanned(char* p)  { _last_page_scanned = p;    }
    public:
-    LGRPSpace(int l, size_t alignment) : _lgrp_id(l), _allocation_failed(false), _last_page_scanned(nullptr) {
+    LGRPSpace(uint l, size_t alignment) : _lgrp_id(l), _allocation_failed(false), _last_page_scanned(nullptr) {
       _space = new MutableSpace(alignment);
       _alloc_rate = new AdaptiveWeightedAverage(NUMAChunkResizeWeight);
     }
@@ -98,7 +97,7 @@ class MutableNUMASpace : public MutableSpace {
     }
 
     static bool equals(void* lgrp_id_value, LGRPSpace* p) {
-      return *(int*)lgrp_id_value == p->lgrp_id();
+      return *(uint*)lgrp_id_value == p->lgrp_id();
     }
 
     // Report a failed allocation.
@@ -118,9 +117,7 @@ class MutableNUMASpace : public MutableSpace {
       alloc_rate()->sample(alloc_rate_sample);
     }
 
-    MemRegion invalid_region() const                { return _invalid_region;      }
-    void set_invalid_region(MemRegion r)            { _invalid_region = r;         }
-    int lgrp_id() const                             { return _lgrp_id;             }
+    uint lgrp_id() const                            { return _lgrp_id;             }
     MutableSpace* space() const                     { return _space;               }
     AdaptiveWeightedAverage* alloc_rate() const     { return _alloc_rate;          }
     void clear_alloc_rate()                         { _alloc_rate->clear();        }
@@ -151,7 +148,7 @@ class MutableNUMASpace : public MutableSpace {
   size_t base_space_size() const                     { return _base_space_size;   }
 
   // Bias region towards the lgrp.
-  void bias_region(MemRegion mr, int lgrp_id);
+  void bias_region(MemRegion mr, uint lgrp_id);
 
   // Get current chunk size.
   size_t current_chunk_size(int i);

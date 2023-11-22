@@ -87,6 +87,8 @@ public class TestG1ParallelPhases {
             .collect(toSet());
 
         Set<String> allPhases = of(
+            "RetireTLABsAndFlushLogs",
+            "NonJavaThreadFlushLogs",
             "ExtRootScan",
             "ThreadRoots",
             "VM Global",
@@ -126,7 +128,7 @@ public class TestG1ParallelPhases {
             "RestoreRetainedRegions",
             "RemoveSelfForwards",
             "RestorePreservedMarks",
-            "ClearRetainedRegionsBitmap",
+            "ProcessEvacuationFailedRegions",
             // Generally optional phases.
             "OptScanHR",
             "OptMergeRS",

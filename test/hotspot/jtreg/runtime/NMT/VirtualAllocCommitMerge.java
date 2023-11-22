@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,22 @@
 /*
  * @test
  * @summary Test merging of committed virtual memory and that we track it correctly
+ * @comment needs to be executed with -Xint (or, alternatively, -Xcomp -Xbatch) since it relies on comparing
+ *          NMT call stacks, and we must make sure that all functions on the stack that NMT sees are either compiled
+ *          from the get-go or stay always interpreted.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail VirtualAllocCommitMerge
+ * @run main/othervm -Xbootclasspath/a:. -Xint -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail VirtualAllocCommitMerge
  *
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Platform;
 
 import jdk.test.whitebox.WhiteBox;
 
@@ -318,8 +322,12 @@ public class VirtualAllocCommitMerge {
     }
 
     public static void checkCommitted(OutputAnalyzer output, long addr, long size, String sizeString) {
+        // On ARM Thumb the stack is not walkable, so the location is not available and
+        // "from" string will not be present in the output.
+        // Disable assertion for ARM32.
+        String fromString = Platform.isARM() ? "" : "from.*";
         output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                            + Long.toHexString(addr + size)
-                           + "\\] committed " + sizeString + " from.*");
+                           + "\\] committed " + sizeString + " " + fromString);
     }
 }

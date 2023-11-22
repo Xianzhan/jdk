@@ -538,14 +538,14 @@ public class ResponseSubscribers {
             if (available != 0) return available;
             Iterator<?> iterator = currentListItr;
             if (iterator != null && iterator.hasNext()) return 1;
-            if (buffers.isEmpty()) return 0;
-            return 1;
+            if (!buffers.isEmpty() && buffers.peek() != LAST_LIST ) return 1;
+            return available;
         }
 
         @Override
         public void onSubscribe(Flow.Subscription s) {
             Objects.requireNonNull(s);
-            if (debug.on()) debug.log("onSubscribed called");
+            if (debug.on()) debug.log("onSubscribe called");
             try {
                 if (!subscribed.compareAndSet(false, true)) {
                     if (debug.on()) debug.log("Already subscribed: canceling");
@@ -559,10 +559,12 @@ public class ResponseSubscribers {
                         closed = this.closed;
                         if (!closed) {
                             this.subscription = s;
-                            // should contain at least 2
-                            assert buffers.remainingCapacity() > 1
+                            // should contain at least 2, unless closed or failed.
+                            assert buffers.remainingCapacity() > 1 || failed != null
                                     : "buffers capacity: " + buffers.remainingCapacity()
-                                    + " closed: " + closed + " failed: " + failed;
+                                    + ", closed: " + closed + ", terminated: "
+                                    + buffers.contains(LAST_LIST)
+                                    + ", failed: " + failed;
                         }
                     }
                     if (closed) {
@@ -578,7 +580,7 @@ public class ResponseSubscribers {
             } catch (Throwable t) {
                 failed = t;
                 if (debug.on())
-                    debug.log("onSubscribed failed", t);
+                    debug.log("onSubscribe failed", t);
                 try {
                     close();
                 } catch (IOException x) {
@@ -778,7 +780,7 @@ public class ResponseSubscribers {
                 subscriber.onComplete();
             } finally {
                 try {
-                    cf.complete(finisher.apply(subscriber));
+                    cf.completeAsync(() -> finisher.apply(subscriber));
                 } catch (Throwable throwable) {
                     cf.completeExceptionally(throwable);
                 }

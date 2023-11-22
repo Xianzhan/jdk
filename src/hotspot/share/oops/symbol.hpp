@@ -131,10 +131,6 @@ class Symbol : public MetaspaceObj {
   }
 
   Symbol(const u1* name, int length, int refcount);
-  void* operator new(size_t size, int len) throw();
-  void* operator new(size_t size, int len, Arena* arena) throw();
-
-  void  operator delete(void* p);
 
   static short extract_hash(uint32_t value)   { return (short)(value >> 16); }
   static int extract_refcount(uint32_t value) { return value & 0xffff; }
@@ -143,11 +139,15 @@ class Symbol : public MetaspaceObj {
   int length() const   { return _length; }
 
  public:
+  Symbol(const Symbol& s1);
+
   // Low-level access (used with care, since not GC-safe)
   const u1* base() const { return &_body[0]; }
 
-  int size()                { return size(utf8_length()); }
-  int byte_size()           { return byte_size(utf8_length()); }
+  int size()      const     { return size(utf8_length()); }
+  int byte_size() const     { return byte_size(utf8_length()); };
+  // length without the _body
+  size_t effective_length() const { return (size_t)byte_size() - sizeof(Symbol); }
 
   // Symbols should be stored in the read-only region of CDS archive.
   static bool is_read_only_by_default() { return true; }
@@ -211,7 +211,7 @@ class Symbol : public MetaspaceObj {
   bool starts_with(const char* prefix) const {
     return starts_with(prefix, (int) strlen(prefix));
   }
-  bool starts_with(int prefix_char) const {
+  bool starts_with(char prefix_char) const {
     return contains_byte_at(0, prefix_char);
   }
   // Tests if the symbol ends with the given suffix.
@@ -221,7 +221,7 @@ class Symbol : public MetaspaceObj {
   bool ends_with(const char* suffix) const {
     return ends_with(suffix, (int) strlen(suffix));
   }
-  bool ends_with(int suffix_char) const {
+  bool ends_with(char suffix_char) const {
     return contains_byte_at(utf8_length() - 1, suffix_char);
   }
 

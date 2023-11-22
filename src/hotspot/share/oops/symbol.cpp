@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
@@ -55,7 +54,7 @@ uint32_t Symbol::pack_hash_and_refcount(short hash, int refcount) {
 
 Symbol::Symbol(const u1* name, int length, int refcount) {
   _hash_and_refcount =  pack_hash_and_refcount((short)os::random(), refcount);
-  _length = length;
+  _length = (u2)length;
   // _body[0..1] are allocated in the header just by coincidence in the current
   // implementation of Symbol. They are read by identity_hash(), so make sure they
   // are initialized.
@@ -65,38 +64,11 @@ Symbol::Symbol(const u1* name, int length, int refcount) {
   memcpy(_body, name, length);
 }
 
-void* Symbol::operator new(size_t sz, int len) throw() {
-#if INCLUDE_CDS
- if (DumpSharedSpaces) {
-   MutexLocker ml(DumpRegion_lock, Mutex::_no_safepoint_check_flag);
-   // To get deterministic output from -Xshare:dump, we ensure that Symbols are allocated in
-   // increasing addresses. When the symbols are copied into the archive, we preserve their
-   // relative address order (sorted, see ArchiveBuilder::gather_klasses_and_symbols).
-   //
-   // We cannot use arena because arena chunks are allocated by the OS. As a result, for example,
-   // the archived symbol of "java/lang/Object" may sometimes be lower than "java/lang/String", and
-   // sometimes be higher. This would cause non-deterministic contents in the archive.
-   DEBUG_ONLY(static void* last = 0);
-   void* p = (void*)MetaspaceShared::symbol_space_alloc(size(len)*wordSize);
-   assert(p > last, "must increase monotonically");
-   DEBUG_ONLY(last = p);
-   return p;
- }
-#endif
-  int alloc_size = size(len)*wordSize;
-  address res = (address) AllocateHeap(alloc_size, mtSymbol);
-  return res;
-}
-
-void* Symbol::operator new(size_t sz, int len, Arena* arena) throw() {
-  int alloc_size = size(len)*wordSize;
-  address res = (address)arena->AmallocWords(alloc_size);
-  return res;
-}
-
-void Symbol::operator delete(void *p) {
-  assert(((Symbol*)p)->refcount() == 0, "should not call this");
-  FreeHeap(p);
+// This copies the symbol when it is added to the ConcurrentHashTable.
+Symbol::Symbol(const Symbol& s1) {
+  _hash_and_refcount = s1._hash_and_refcount;
+  _length = s1._length;
+  memcpy(_body, s1._body, _length);
 }
 
 #if INCLUDE_CDS
@@ -242,7 +214,7 @@ const char* Symbol::as_klass_external_name() const {
 static void print_class(outputStream *os, const SignatureStream& ss) {
   int sb = ss.raw_symbol_begin(), se = ss.raw_symbol_end();
   for (int i = sb; i < se; ++i) {
-    int ch = ss.raw_char_at(i);
+    char ch = ss.raw_char_at(i);
     if (ch == JVM_SIGNATURE_SLASH) {
       os->put(JVM_SIGNATURE_DOT);
     } else {
@@ -386,7 +358,7 @@ void Symbol::make_permanent() {
       fatal("refcount underflow");
       return;
     } else {
-      int hash = extract_hash(old_value);
+      short hash = extract_hash(old_value);
       found = Atomic::cmpxchg(&_hash_and_refcount, old_value, pack_hash_and_refcount(hash, PERM_REFCOUNT));
       if (found == old_value) {
         return;  // successfully updated.
@@ -417,11 +389,9 @@ void Symbol::print() const { print_on(tty); }
 // The print_value functions are present in all builds, to support the
 // disassembler and error reporting.
 void Symbol::print_value_on(outputStream* st) const {
-  st->print("'");
-  for (int i = 0; i < utf8_length(); i++) {
-    st->print("%c", char_at(i));
-  }
-  st->print("'");
+  st->print_raw("'", 1);
+  st->print_raw((const char*)base(), utf8_length());
+  st->print_raw("'", 1);
 }
 
 void Symbol::print_value() const { print_value_on(tty); }
