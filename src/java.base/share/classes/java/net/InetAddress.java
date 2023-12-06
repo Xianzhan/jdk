@@ -668,11 +668,17 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * A typical implementation will use ICMP ECHO REQUESTs if the
      * privilege can be obtained, otherwise it will try to establish
      * a TCP connection on port 7 (Echo) of the destination host.
+     * 
+     * 测试该地址是否可达。实现尽最大努力尝试到达主机，但是防火墙和服务器配置可能会阻止请求，导致无法到达状态，而某些特定端口可能可以访问。
+     * 如果可以获得特权，典型的实现将使用 ICMP ECHO 请求，否则它将尝试在目标主机的端口 7 (ECHO)上建立 TCP 连接。
+     * 
      * <p>
      * The timeout value, in milliseconds, indicates the maximum amount of time
      * the try should take. If the operation times out before getting an
      * answer, the host is deemed unreachable. A negative value will result
      * in an IllegalArgumentException being thrown.
+     * 
+     * 超时值(以毫秒为单位)表示尝试应该花费的最大时间。如果在获得应答之前操作超时，则认为主机不可达。负值将导致抛出 IllegalArgumentException 异常。
      *
      * @param   timeout the time, in milliseconds, before the call aborts
      * @return a {@code boolean} indicating if the address is reachable.
