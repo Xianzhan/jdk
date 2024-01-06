@@ -14,23 +14,23 @@
     - [os](./src/hotspot/os/readme.md)
     - [os_cpu](./src/hotspot/os_cpu/readme.md)
     - [share](./src/hotspot/share/readme.md)
-      - [adlc](./adlc/readme.md): 平台描述文件
-      - [asm](./asm/readme.md): 汇编器
-      - [c1](./c1/readme.md): C1 编译器
-      - [ci](./ci/readme.md): 动态编译器
-      - [classfile](./classfile/readme.md): `.class` 文件解析和类的链接
-      - [code](./code/readme.md): 机器码生成
-      - [compiler](./compiler/readme.md): 调用动态编译器的接口
-      - [gc](./gc/readme.md): GC 接口及实现
-      - [interpreter](./interpreter/readme.md): 解释器
-      - [libadt](./libadt/readme.md): 抽象数据结构
-      - [memory](./memory/readme.md): 内存管理
-      - [oops](./oops/readme.md): JVM 内部对象表示
-      - [opto](./opto/readme.md): C2 编译器
-      - [prims](./prims/readme.md): HotSpot 对外接口
-      - [runtime](./runtime/readme.md): 运行时
-      - [services](./services/readme.md): JMX 接口
-      - [utilities](./utilities/readme.md): 内部工具类和公共函数
+      - [adlc](./src/hotspot/share/adlc/readme.md): 平台描述文件
+      - [asm](./src/hotspot/share/asm/readme.md): 汇编器
+      - [c1](./src/hotspot/share/c1/readme.md): C1 编译器
+      - [ci](./src/hotspot/share/ci/readme.md): 动态编译器
+      - [classfile](./src/hotspot/share/classfile/readme.md): `.class` 文件解析和类的链接
+      - [code](./src/hotspot/share/code/readme.md): 机器码生成
+      - [compiler](./src/hotspot/share/compiler/readme.md): 调用动态编译器的接口
+      - [gc](./src/hotspot/share/gc/readme.md): GC 接口及实现
+      - [interpreter](./src/hotspot/share/interpreter/readme.md): 解释器
+      - [libadt](./src/hotspot/share/libadt/readme.md): 抽象数据结构
+      - [memory](./src/hotspot/share/memory/readme.md): 内存管理
+      - [oops](./src/hotspot/share/oops/readme.md): JVM 内部对象表示
+      - [opto](./src/hotspot/share/opto/readme.md): C2 编译器
+      - [prims](./src/hotspot/share/prims/readme.md): HotSpot 对外接口
+      - [runtime](./src/hotspot/share/runtime/readme.md): 运行时
+      - [services](./src/hotspot/share/services/readme.md): JMX 接口
+      - [utilities](./src/hotspot/share/utilities/readme.md): 内部工具类和公共函数
   - java.base
     - [`java Main` launcher 启动](src/java.base/share/native/launcher/readme.md)
     - share
