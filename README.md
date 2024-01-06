@@ -25,6 +25,7 @@
       - [gc](./src/hotspot/share/gc/readme.md): GC 接口及实现
       - [include](./src/hotspot/share/include/readme.md): JVM 头文件
       - [interpreter](./src/hotspot/share/interpreter/readme.md): 解释器
+      - [jfr](./src/hotspot/share/jfr/readme.md): Java Flight Recorder Java 飞行记录器
       - [libadt](./src/hotspot/share/libadt/readme.md): 抽象数据结构
       - [logging](./src/hotspot/share/logging/readme.md): 统一 JVM 日志记录
       - [memory](./src/hotspot/share/memory/readme.md): 内存管理
