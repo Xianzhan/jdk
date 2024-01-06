@@ -23,6 +23,7 @@
       - [code](./src/hotspot/share/code/readme.md): 机器码生成
       - [compiler](./src/hotspot/share/compiler/readme.md): 调用动态编译器的接口
       - [gc](./src/hotspot/share/gc/readme.md): GC 接口及实现
+      - [include](./src/hotspot/share/include/readme.md): JVM 头文件
       - [interpreter](./src/hotspot/share/interpreter/readme.md): 解释器
       - [libadt](./src/hotspot/share/libadt/readme.md): 抽象数据结构
       - [logging](./src/hotspot/share/logging/readme.md): 统一 JVM 日志记录
