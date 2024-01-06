@@ -25,6 +25,7 @@
       - [interpreter](./src/hotspot/share/interpreter/readme.md): 解释器
       - [libadt](./src/hotspot/share/libadt/readme.md): 抽象数据结构
       - [memory](./src/hotspot/share/memory/readme.md): 内存管理
+      - [nmt](./src/hotspot/share/nmt/readme.md): Native Memory Tracking 本地内存跟踪
       - [oops](./src/hotspot/share/oops/readme.md): JVM 内部对象表示
       - [opto](./src/hotspot/share/opto/readme.md): C2 编译器
       - [prims](./src/hotspot/share/prims/readme.md): HotSpot 对外接口
