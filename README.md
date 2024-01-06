@@ -17,6 +17,7 @@
       - [adlc](./src/hotspot/share/adlc/readme.md): 平台描述文件
       - [asm](./src/hotspot/share/asm/readme.md): 汇编器
       - [c1](./src/hotspot/share/c1/readme.md): C1 编译器
+      - [cds](./src/hotspot/share/cds/readme.md): class-data sharing(CDS)
       - [ci](./src/hotspot/share/ci/readme.md): 动态编译器
       - [classfile](./src/hotspot/share/classfile/readme.md): `.class` 文件解析和类的链接
       - [code](./src/hotspot/share/code/readme.md): 机器码生成
