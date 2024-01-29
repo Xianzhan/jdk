@@ -111,7 +111,6 @@ class TenuredGeneration: public Generation {
   const char* name() const { return "tenured generation"; }
   const char* short_name() const { return "Tenured"; }
 
-  size_t unsafe_max_alloc_nogc() const;
   size_t contiguous_available() const;
 
   // Iteration
@@ -128,10 +127,6 @@ class TenuredGeneration: public Generation {
   void save_marks();
 
   bool no_allocs_since_save_marks();
-
-  // Requires "addr" to be the start of a block, and returns "TRUE" iff
-  // the block is an object.
-  inline bool block_is_obj(const HeapWord* addr) const;
 
   virtual void collect(bool full,
                        bool clear_all_soft_refs,
