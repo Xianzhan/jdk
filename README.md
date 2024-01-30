@@ -45,6 +45,10 @@
   - [utils](src/utils/readme.md)
   - [test](src/test/readme.md)<br/>
 
+# 名词解释
+
+- gmk: [GNU MAKE FILE](https://www.gnu.org/software/make/manual/make.html)
+
 # Welcome to the JDK!
 
 For build instructions please see the
