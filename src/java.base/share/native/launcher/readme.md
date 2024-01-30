@@ -1,23 +1,28 @@
 [`main.c#main`](main.c)
 
-1. 执行 [JLI_List_new](../libjli/jli_util.c) 创建 [JLI_List args](../libjli/jli_util.h) 结构体保存命令行参数
-2. [JLI_List_add](../libjli/jli_util.c)添加 C 参数到 Java 参数列表
-3. [JLI_AddArgsFromEnvVar](../libjli/args.c) 从环境变量 [`JDK_JAVA_OPTIONS`](../libjli/java.h) 获取 java 参数
-4. [JLI_PreprocessArg](../libjli/args.c) 解析 C 参数, 若参数以 `@` 开头, 则保存到临时列表 `JLI_List argsInFile` 后遍历保存到 `args`; 否则直接添加到 `args`
-5. [`JLI_Launch`](../libjli/java.c) 启动 JVM
+```c
+/**
+ * main 函数主要是为 JLI_Launch 函数解析设置参数
+ */
+JNIEXPORT int
+main(int argc, char **argv)
+{
+    int margc;
+    char** margv;
+    int jargc = argc;
+    char** jargv = argv;
+    const jboolean const_javaw = JNI_FALSE;
 
-```mermaid
-sequenceDiagram
-    participant main.c
-    participant jli_util.c
-    participant args.c
-    participant java.c
-
-    main.c->>jli_util.c: JLI_List_new
-    main.c->>jli_util.c: JLI_List_add
-    main.c->>args.c: JLI_AddArgsFromEnvVar
-    main.c->>args.c: JLI_PreprocessArg
-    main.c->>java.c: JLI_Launch
+    return JLI_Launch(margc, margv,
+                jargc, (const char**) jargv,
+                0, NULL,
+                VERSION_STRING,
+                DOT_VERSION,
+                (const_progname != NULL) ? const_progname : *margv,
+                (const_launcher != NULL) ? const_launcher : *margv,
+                jargc > 0,
+                const_cpwildcard, const_javaw, 0);
+}
 ```
 
 [`java.c#JLI_Launch`](../libjli/java.c)
