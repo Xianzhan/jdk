@@ -239,10 +239,14 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 )
 {
     int mode = LM_UNKNOWN;
+    // classpath
     char *what = NULL;
+    // 有 main 方法的 class 文件
     char *main_class = NULL;
     int ret;
+
     InvocationFunctions ifn;
+    // 启动时间
     jlong start = 0, end = 0;
     // JVM 的路径
     char jvmpath[MAXPATHLEN];
@@ -287,6 +291,8 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
      *     invoked from the command line.
      *  2) 允许 JRE 版本调用 JDK 1.9 或更高版本。
      *     自所有 mJRE 指令都已从请求中剥离，但是 1.9 之前的 JRE[1.6 到 1.8]，就像 1.9+ 一样从命令行调用。
+     * 
+     * 其他，从 jar 包中读取 META-INF/MAINFEST.MF 获取 main_class
      */
     SelectVersion(argc, argv, &main_class);
 
@@ -304,6 +310,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     }
 
     // 加载 libjvm 动态链接库
+    // 赋值绑定到 ifn
     if (!LoadJavaVM(jvmpath, &ifn)) {
         return(6);
     }

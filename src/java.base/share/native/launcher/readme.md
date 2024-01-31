@@ -27,29 +27,94 @@ main(int argc, char **argv)
 
 [`java.c#JLI_Launch`](../libjli/java.c)
 
-1. [InitLauncher](../../../unix/native/libjli/java_md_common.c) 初始化启动器
-2. [DumpState](../libjli/java.c) 根据初始化判断是否打印信息
-3. [SelectVersion](../libjli/java.c) 确保有合适的 JRE 运行
-4. [CreateExecutionEnvironment](../../../unix/native/libjli/java_md.c) 创建执行环境
-5. [LoadJavaVM](../../../unix/native/libjli/java_md.c) 加载 libjvm 动态链接库, 加载函数 `JNI_CreateJavaVM`、`JNI_GetDefaultJavaVMInitArgs`、`JNI_GetCreatedJavaVMs`并绑定 `InvocationFunctions *ifn`
-6. [ParseArguments](../libjli/java.c) 解析命令行参数
-7. [JVMInit](../libjli/java.c) JVM 初始化
+```c
+JNIEXPORT int JNICALL
+JLI_Launch(int argc, char ** argv,              /* main argc, argv */
+        int jargc, const char** jargv,          /* java args */
+        int appclassc, const char** appclassv,  /* app classpath */
+        const char* fullversion,                /* full version defined */
+        const char* dotversion,                 /* UNUSED dot version defined */
+        const char* pname,                      /* program name */
+        const char* lname,                      /* launcher name */
+        jboolean javaargs,                      /* JAVA_ARGS */
+        jboolean cpwildcard,                    /* classpath wildcard*/
+        jboolean javaw,                         /* windows-only javaw */
+        jint ergo                               /* unused */
+)
+{
+    int mode = LM_UNKNOWN;
+    // classpath
+    char *what = NULL;
+    // 有 main 方法的 class 文件
+    char *main_class = NULL;
+    int ret;
+    InvocationFunctions ifn;
+    // 启动时间
+    jlong start = 0, end = 0;
+    // JVM 的路径
+    char jvmpath[MAXPATHLEN];
+    // JRE 的路径
+    char jrepath[MAXPATHLEN];
 
-```mermaid
-sequenceDiagram
-    participant java.c
-    participant java_md_common.c
-    participant java_md.c
+    /*
+     * SelectVersion() has several responsibilities:
+     * SelectVersion() 有几个职责:
+     *
+     *  1) Disallow specification of another JRE.  With 1.9, another
+     *     version of the JRE cannot be invoked.
+     *  1) 禁止指定其他 JRE。1.9 是另一个无法调用 JRE 版本。
+     * 
+     *  2) Allow for a JRE version to invoke JDK 1.9 or later.  Since
+     *     all mJRE directives have been stripped from the request but
+     *     the pre 1.9 JRE [ 1.6 thru 1.8 ], it is as if 1.9+ has been
+     *     invoked from the command line.
+     *  2) 允许 JRE 版本调用 JDK 1.9 或更高版本。
+     *     自所有 mJRE 指令都已从请求中剥离，但是 1.9 之前的 JRE[1.6 到 1.8]，就像 1.9+ 一样从命令行调用。
+     * 
+     * 其他，从 jar 包中读取 META-INF/MAINFEST.MF 获取 main_class
+     */
+    SelectVersion(argc, argv, &main_class);
 
-    java.c->>java.c: InvocationFunctions ifn
-    java.c->>java_md_common.c: InitLauncher
-    java.c->>java.c: DumpState
-    java.c->>java.c: SelectVersion
-    java.c->>java_md.c: CreateExecutionEnvironment
-    java.c->>java.c: LoadJavaVM
-    java.c->>java.c: ParseArguments
-    java.c->>java_md.c: JVMInit
+    // 创建 JVM 执行环境，确定数据模型，如 32/64 位 jvm
+    CreateExecutionEnvironment(&argc, &argv,
+                               jrepath, sizeof(jrepath),
+                               jvmpath, sizeof(jvmpath),
+                               jvmcfg,  sizeof(jvmcfg));
+
+    ifn.CreateJavaVM = 0;
+    ifn.GetDefaultJavaVMInitArgs = 0;
+
+    // 加载 libjvm 动态链接库, 加载函数 
+    // `JNI_CreateJavaVM`、
+    // `JNI_GetDefaultJavaVMInitArgs`、
+    // `JNI_GetCreatedJavaVMs`
+    // 并绑定 `InvocationFunctions *ifn`
+    if (!LoadJavaVM(jvmpath, &ifn)) {
+        return(6);
+    }
+
+    ++argv;
+    --argc;
+
+    /* Parse command line options; if the return value of
+     * ParseArguments is false, the program should exit.
+     * 解析命令行参数；若参数如 '--help' 之类的则返回 true 退出程序
+     */
+    if (!ParseArguments(&argc, &argv, &mode, &what, &ret, jrepath)) {
+        return(ret);
+    }
+
+    /* Override class path if -jar flag was specified */
+    if (mode == LM_JAR) {
+        SetClassPath(what);     /* Override class path */
+    }
+
+    // JVM 初始化后启动
+    return JVMInit(&ifn, threadStackSize, argc, argv, mode, what, ret);
+}
 ```
+
+
 
 [`java_md.c#JVMInit`](../../../unix/native/libjli/java_md.c)
 
