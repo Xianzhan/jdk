@@ -76,6 +76,10 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     SelectVersion(argc, argv, &main_class);
 
     // 创建 JVM 执行环境，确定数据模型，如 32/64 位 jvm
+    // GetJREPath: 找到 JRE 路径
+    // ReadKnownVMs: 根据 jvm.cfg 获取已知 JVM
+    // CheckJvmType: 检查 JVM 类型
+    // GetJVMPath: 根据 JVM 类型获取 JVM 路径
     CreateExecutionEnvironment(&argc, &argv,
                                jrepath, sizeof(jrepath),
                                jvmpath, sizeof(jvmpath),
