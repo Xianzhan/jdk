@@ -313,8 +313,11 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         start = CurrentTimeMicros();
     }
 
-    // 加载 libjvm 动态链接库
-    // 赋值绑定到 ifn
+    // 加载 libjvm 动态链接库, 加载函数 
+    // `JNI_CreateJavaVM`、
+    // `JNI_GetDefaultJavaVMInitArgs`、
+    // `JNI_GetCreatedJavaVMs`
+    // 并绑定 `InvocationFunctions *ifn`
     if (!LoadJavaVM(jvmpath, &ifn)) {
         return(6);
     }

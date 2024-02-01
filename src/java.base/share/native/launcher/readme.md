@@ -122,17 +122,22 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
 [`java_md.c#JVMInit`](../../../unix/native/libjli/java_md.c)
 
-1. [ShowSplashScreen](../libjli/java.c) Swing/AWT 相关
-2. [ContinueInNewThread](../libjli/java.c) 初始化线程栈, 然后使用新线程执行 Java 的 `public static void main(String[])` 方法
-
-```mermaid
-sequenceDiagram
-    participant java_md.c
-    participant java.c
-
-
-    java_md.c->>java.c: ShowSplashScreen
-    java_md.c->>java.c: ContinueInNewThread
+```c
+int
+JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
+        int argc, char **argv,
+        int mode, char *what, int ret)
+{
+    ShowSplashScreen();
+    // ifn
+    // threadStackSize: 若没有设置 `-Xss`, 则为 0
+    // argc
+    // argv
+    // mode
+    // what
+    // ret
+    return ContinueInNewThread(ifn, threadStackSize, argc, argv, mode, what, ret);
+}
 ```
 
 [`java.c#ContinueInNewThread`](../libjli/java.c)

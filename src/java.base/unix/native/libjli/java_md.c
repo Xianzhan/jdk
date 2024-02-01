@@ -715,6 +715,13 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
         int mode, char *what, int ret)
 {
     ShowSplashScreen();
+    // ifn
+    // threadStackSize: 若没有设置 `-Xss`, 则为 0
+    // argc
+    // argv
+    // mode
+    // what
+    // ret
     return ContinueInNewThread(ifn, threadStackSize, argc, argv, mode, what, ret);
 }
 

@@ -383,7 +383,10 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
      * assumed to be present in the "JRE path" directory.  If it is not found
      * there (or "JRE path" fails to resolve), skip the explicit load and let
      * nature take its course, which is likely to be a failure to execute.
-     *
+     * 首先需要加载 Microsoft C 运行时库。副本是
+     * 假定存在于 “JRE 路径” 目录中。如果没有找到
+     * (或 “JRE 路径” 无法解析)，则跳过显式加载并让其
+     * 顺其自然，这很可能是执行失败。
      */
     LoadMSVCRT();
 
