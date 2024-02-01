@@ -185,3 +185,32 @@ ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
 3. `pthread_join(tid, &tmp)` 当前线程等待新线程完成
 
 此处, JVM 就完成初始化并执行 Java 的 `public static void main(String[])` 方法。
+
+```c
+/*
+ * Block current thread and continue execution in a new thread.
+ * 阻塞当前线程并在新线程中继续执行。
+ */
+int
+CallJavaMainInNewThread(jlong stack_size, void* args) {
+    int rslt;
+    pthread_t tid;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+    // 获得线程栈末尾的警戒缓冲区大小
+    pthread_attr_setguardsize(&attr, 0); // no pthread guard page on java threads
+
+    // 创建新线程, 执行 `ThreadJavaMain` 逻辑
+    if (pthread_create(&tid, &attr, ThreadJavaMain, args) == 0) {
+        void* tmp;
+        // 当前线程等待新线程完成
+        pthread_join(tid, &tmp);
+        rslt = (int)(intptr_t)tmp;
+    }
+
+    pthread_attr_destroy(&attr);
+    return rslt;
+}
+```

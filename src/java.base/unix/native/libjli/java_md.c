@@ -666,6 +666,7 @@ static size_t adjustStackSize(size_t stack_size) {
 
 /*
  * Block current thread and continue execution in a new thread.
+ * 阻塞当前线程并在新线程中继续执行。
  */
 int
 CallJavaMainInNewThread(jlong stack_size, void* args) {
@@ -686,10 +687,13 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
             }
         }
     }
+    // 获得线程栈末尾的警戒缓冲区大小
     pthread_attr_setguardsize(&attr, 0); // no pthread guard page on java threads
 
+    // 创建新线程, 执行 `ThreadJavaMain` 逻辑
     if (pthread_create(&tid, &attr, ThreadJavaMain, args) == 0) {
         void* tmp;
+        // 当前线程等待新线程完成
         pthread_join(tid, &tmp);
         rslt = (int)(intptr_t)tmp;
     } else {
@@ -698,6 +702,10 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
         * memory/LWP)  a new thread can't be created. This will likely fail
         * later in JavaMain as JNI_CreateJavaVM needs to create quite a
         * few new threads, anyway, just give it a try..
+        * 如果由于某种原因(例如 out of memory/LWP) 不能创建新线程。
+        * 继续在当前线程中执行, 这很可能会失败
+        * 稍后在 JavaMain 中作为 JNI_CreateJavaVM 需要创建相当多的
+        * 一些新的线程，无论如何，只是给它一个尝试…
         */
         rslt = JavaMain(args);
     }
