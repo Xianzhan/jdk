@@ -2378,6 +2378,12 @@ ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
          * A returned 0 means 'use the system default' for a platform, e.g., Windows.
          * Note that HotSpot no longer supports JNI_VERSION_1_1 but it will
          * return its default stack size through the init args structure.
+         * 如果用户没有指定非零的堆栈大小，请向 JVM 询问其默认值。
+         * 返回 0 表示对平台(例如 Windows) “使用系统默认值”。
+         * 注意，HotSpot 不再支持 JNI_VERSION_1_1，但它将支持
+         * 通过 init args 结构返回其默认堆栈大小。
+         * 
+         * 忽略
          */
         struct JDK1_1InitArgs args1_1;
         memset((void*)&args1_1, 0, sizeof(args1_1));

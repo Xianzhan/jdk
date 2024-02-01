@@ -142,17 +142,33 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
 
 [`java.c#ContinueInNewThread`](../libjli/java.c)
 
-1. [ifn->GetDefaultJavaVMInitArgs](../../../../hotspot/share/prims/jni.cpp) 设置栈大小, 1.1 版本后不支持, 忽略
 2. [CallJavaMainInNewThread](../../../unix/native/libjli/java_md.c) 阻塞当前线程创建新线程, 在新线程调用 `main` 静态方法
 
-```mermaid
-sequenceDiagram
-    participant java.c
-    participant jni.cpp
-    participant java_md.c
+```c
+int
+ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
+                    int argc, char **argv,
+                    int mode, char *what, int ret)
+{
+    { /* Create a new thread to create JVM and invoke main method */
+      /* 创建一个新线程来创建 JVM 并调用 main 方法 */
+        JavaMainArgs args;
+        int rslt;
 
-    java.c->>jni.cpp: ifn->GetDefaultJavaVMInitArgs
-    java.c->>java_md.c: CallJavaMainInNewThread
+        args.argc = argc;
+        args.argv = argv;
+        args.mode = mode;
+        args.what = what;
+        args.ifn = *ifn;
+
+        rslt = CallJavaMainInNewThread(threadStackSize, (void*)&args);
+        /* If the caller has deemed there is an error we
+         * simply return that, otherwise we return the value of
+         * the callee
+         */
+        return (ret != 0) ? ret : rslt;
+    }
+}
 ```
 
 [`java_md.c#CallJavaMainInNewThread`](../../../unix/native/libjli/java_md.c)
