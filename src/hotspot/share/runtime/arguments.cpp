@@ -3664,27 +3664,35 @@ jint Arguments::apply_ergo() {
   if (result != JNI_OK) return result;
 
   // Set heap size based on available physical memory
+  // 根据可用的物理内存设置堆大小
   set_heap_size();
 
   GCConfig::arguments()->initialize();
 
+  // CDS 初始化
   CDSConfig::initialize();
 
   // Initialize Metaspace flags and alignments
+  // 初始化元空间标志和对齐
   Metaspace::ergo_initialize();
 
+  // String 重复数据删除初始化
   if (!StringDedup::ergo_initialize()) {
     return JNI_EINVAL;
   }
 
   // Set compiler flags after GC is selected and GC specific
   // flags (LoopStripMiningIter) are set.
+  // 在选择 GC 并指定 GC 之后设置编译器标志
+  // 设置 flags (LoopStripMiningIter)。
   CompilerConfig::ergo_initialize();
 
   // Set bytecode rewriting flags
+  // 设置字节码重写标志
   set_bytecode_flags();
 
   // Set flags if aggressive optimization flags are enabled
+  // 如果启用了主动优化标志，则设置标志
   jint code = set_aggressive_opts_flags();
   if (code != JNI_OK) {
     return code;

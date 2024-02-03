@@ -117,6 +117,7 @@ void LogConfiguration::initialize(jlong vm_start_time) {
   _outputs[1]->set_config_string("all=off");
 
   // Set the default output to warning and error level for all new tagsets.
+  // 将所有新标记集的默认输出设置为警告和错误级别。
   for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     ts->set_output_level(StdoutLog, LogLevel::Default);
   }

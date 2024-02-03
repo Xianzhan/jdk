@@ -943,6 +943,10 @@ void ostream_init() {
     // the time when the JVM is initialized, not the first time we ask
     // for a time stamp. So, here, we explicitly update the time stamp
     // of tty.
+    // 我们希望确保 GC 日志中的时间戳考虑时间 0
+    // JVM 初始化的时间，而不是我们第一次请求的时间
+    // 获取时间戳。这里，我们显式地更新时间戳
+    // 遥控。
     tty->time_stamp().update_to(1);
   }
 }

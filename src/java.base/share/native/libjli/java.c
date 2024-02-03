@@ -1549,6 +1549,7 @@ ParseArguments(int *pargc, char ***pargv,
 /*
  * Initializes the Java Virtual Machine. Also frees options array when
  * finished.
+ * 初始化 Java 虚拟机。当结束时释放选项数组。
  */
 static jboolean
 InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)

@@ -1,4 +1,4 @@
-[`main.c#main`](main.c)
+# [`main.c#main`](main.c)
 
 ```c
 /**
@@ -25,7 +25,7 @@ main(int argc, char **argv)
 }
 ```
 
-[`java.c#JLI_Launch`](../libjli/java.c)
+# [`java.c#JLI_Launch`](../libjli/java.c)
 
 ```c
 JNIEXPORT int JNICALL
@@ -120,7 +120,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 
 
 
-[`java_md.c#JVMInit`](../../../unix/native/libjli/java_md.c)
+# [`java_md.c#JVMInit`](../../../unix/native/libjli/java_md.c)
 
 ```c
 int
@@ -140,7 +140,7 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
 }
 ```
 
-[`java.c#ContinueInNewThread`](../libjli/java.c)
+# [`java.c#ContinueInNewThread`](../libjli/java.c)
 
 2. [CallJavaMainInNewThread](../../../unix/native/libjli/java_md.c) 阻塞当前线程创建新线程, 在新线程调用 `main` 静态方法
 
@@ -171,20 +171,7 @@ ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
 }
 ```
 
-[`java_md.c#CallJavaMainInNewThread`](../../../unix/native/libjli/java_md.c)
-
-1. `pthread_attr_setguardsize(&attr, 0)` 获得线程栈末尾的警戒缓冲区大小
-2. `pthread_create(&tid, &attr, ThreadJavaMain, args)` 创建新线程, 执行 `ThreadJavaMain` 逻辑
-    1. `ThreadJavaMain` -> `JavaMain`
-    2. `JavaMain` -> `InvocationFunctions ifn = args->ifn;`
-    3. `JavaMain` -> `InitializeJVM` 初始化 JVM
-        1. `InitializeJVM` -> [`ifn->CreateJavaVM(pvm, (void **)penv, &args);`](../../../../hotspot/share/prims/readme.md) 创建 JVM
-    4. `JavaMain` -> `LoadMainClass` 加载 main 类
-    5. `JavaMain` -> `(*env)->GetStaticMethodID(env, mainClass, "main", "([Ljava/lang/String;)V");` 获取 main 方法
-    6. `JavaMain` -> `(*env)->CallStaticVoidMethod(env, mainClass, mainID);` 执行 main 方法
-3. `pthread_join(tid, &tmp)` 当前线程等待新线程完成
-
-此处, JVM 就完成初始化并执行 Java 的 `public static void main(String[])` 方法。
+# [`java_md.c#CallJavaMainInNewThread`](../../../unix/native/libjli/java_md.c)
 
 ```c
 /*
@@ -214,3 +201,226 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
     return rslt;
 }
 ```
+
+# [`java_md.c#ThreadJavaMain`](../../../unix/native/libjli/java_md.c)
+
+```c
+/*
+ * Signature adapter for pthread_create() or thr_create().
+ * pthread_create() 或 thr_create() 的签名适配器。
+ */
+static void* ThreadJavaMain(void* args) {
+    return (void*)(intptr_t)JavaMain(args);
+}
+```
+
+# [java.c#JavaMain](../libjli/java.c)
+
+```c
+int
+JavaMain(void* _args)
+{
+    JavaMainArgs *args = (JavaMainArgs *)_args;
+    int argc = args->argc;
+    char **argv = args->argv;
+    int mode = args->mode;
+    char *what = args->what;
+    InvocationFunctions ifn = args->ifn;
+
+    JavaVM *vm = 0;
+    JNIEnv *env = 0;
+    jclass mainClass = NULL;
+    jclass appClass = NULL; // actual application class being launched
+    jobjectArray mainArgs;
+    int ret = 0;
+
+    // ifn->CreateJavaVM(vm, (void **)env, &args);
+    // 执行 libjvm 的 JNI_CreateJavaVM() 函数
+    // 经过一系列原子保证后调用 threads.cpp#Threads::create_vm((JavaVMInitArgs*) args, &can_try_again)
+    // - ostream_init(); 初始化输出流模块，日志
+    // - os::init(); 初始化操作系统模块
+    // - Arguments::init_system_properties(); 初始化系统属性
+    // - JDK_Version_init(); JDK 版本初始化
+    // - Arguments::init_version_specific_system_properties(); 初始化版本系统属性
+    // - LogConfiguration::initialize(create_vm_timer.begin_time()); VM 日志配置初始化
+    // - MemTracker::initialize(); 初始化内存跟踪器
+    // - Arguments::apply_ergo();
+    //   - 根据参数选择 GC，若无，则选择默认 GC
+    //   - 根据可用的物理内存设置堆大小
+    //   - CDS 初始化
+    //   - 初始化元空间标志和对齐
+    //   - String 重复数据删除初始化
+    //   - C1/C2 编译器初始化
+    //   - 设置字节码重写标志
+    // - os::init_2(); 本机操作系统的配置
+    // - SafepointMechanism::initialize(); 安全点装置初始化
+    // - JvmtiAgentList::load_agents(); 加载代理
+    // - vm_init_globals(); vm 全局初始化
+    // - JavaThread* main_thread = new JavaThread(); 将主线程附加到这个 os 线程
+    // - 监视器初始化
+    // - init_globals(); 初始化全局模块
+    //   - management_init(); JVM 监控管理服务初始化
+    //   - bytecodes_init(); 字节码初始化
+    //   - classLoader_init1(); 类加载器初始化，加载本地 rt.jar 等
+    //   - compilationPolicy_init(); 编译策略初始化
+    //   - codeCache_init();
+    //   - VM_Version_init();
+    //   - initial_stubs_init();
+    //   - universe_init();
+    //   - ...
+    // - init_globals2();
+    //   - interpreter_init_code();
+    //   - jni_handles_init();
+    //   - MethodHandles::generate_adapters();
+    // - initialize_jsr292_core_classes(CHECK_JNI_ERR);
+    if (!InitializeJVM(&vm, &env, &ifn)) {
+        JLI_ReportErrorMessage(JVM_ERROR1);
+        exit(1);
+    }
+
+    if (showSettings != NULL) {
+        ShowSettings(env, showSettings);
+        CHECK_EXCEPTION_LEAVE(1);
+    }
+
+    // show resolved modules and continue
+    if (showResolvedModules) {
+        ShowResolvedModules(env);
+        CHECK_EXCEPTION_LEAVE(1);
+    }
+
+    // list observable modules, then exit
+    if (listModules) {
+        ListModules(env);
+        CHECK_EXCEPTION_LEAVE(1);
+        LEAVE();
+    }
+
+    // describe a module, then exit
+    if (describeModule != NULL) {
+        DescribeModule(env, describeModule);
+        CHECK_EXCEPTION_LEAVE(1);
+        LEAVE();
+    }
+
+    if (printVersion || showVersion) {
+        PrintJavaVersion(env);
+        CHECK_EXCEPTION_LEAVE(0);
+        if (printVersion) {
+            LEAVE();
+        }
+    }
+
+    // modules have been validated at startup so exit
+    if (validateModules) {
+        LEAVE();
+    }
+
+    /*
+     * -Xshare:dump does not have a main class so the VM can safely exit now
+     */
+    if (dumpSharedSpaces) {
+        CHECK_EXCEPTION_LEAVE(1);
+        LEAVE();
+    }
+
+    /* If the user specified neither a class name nor a JAR file */
+    if (printXUsage || printUsage || what == 0 || mode == LM_UNKNOWN) {
+        PrintUsage(env, printXUsage);
+        CHECK_EXCEPTION_LEAVE(1);
+        LEAVE();
+    }
+
+    FreeKnownVMs(); /* after last possible PrintUsage */
+
+    if (JLI_IsTraceLauncher()) {
+        end = CurrentTimeMicros();
+        JLI_TraceLauncher("%ld micro seconds to InitializeJVM\n", (long)(end-start));
+    }
+
+    /* At this stage, argc/argv have the application's arguments */
+    if (JLI_IsTraceLauncher()){
+        int i;
+        printf("%s is '%s'\n", launchModeNames[mode], what);
+        printf("App's argc is %d\n", argc);
+        for (i=0; i < argc; i++) {
+            printf("    argv[%2d] = '%s'\n", i, argv[i]);
+        }
+    }
+
+    ret = 1;
+
+    /*
+     * See bugid 5030265.  The Main-Class name has already been parsed
+     * from the manifest, but not parsed properly for UTF-8 support.
+     * Hence the code here ignores the value previously extracted and
+     * uses the pre-existing code to reextract the value.  This is
+     * possibly an end of release cycle expedient.  However, it has
+     * also been discovered that passing some character sets through
+     * the environment has "strange" behavior on some variants of
+     * Windows.  Hence, maybe the manifest parsing code local to the
+     * launcher should never be enhanced.
+     *
+     * Hence, future work should either:
+     *     1)   Correct the local parsing code and verify that the
+     *          Main-Class attribute gets properly passed through
+     *          all environments,
+     *     2)   Remove the vestages of maintaining main_class through
+     *          the environment (and remove these comments).
+     *
+     * This method also correctly handles launching existing JavaFX
+     * applications that may or may not have a Main-Class manifest entry.
+     */
+    mainClass = LoadMainClass(env, mode, what);
+    CHECK_EXCEPTION_NULL_LEAVE(mainClass);
+    /*
+     * In some cases when launching an application that needs a helper, e.g., a
+     * JavaFX application with no main method, the mainClass will not be the
+     * applications own main class but rather a helper class. To keep things
+     * consistent in the UI we need to track and report the application main class.
+     */
+    appClass = GetApplicationClass(env);
+    CHECK_EXCEPTION_NULL_LEAVE(appClass);
+
+    /* Build platform specific argument array */
+    mainArgs = CreateApplicationArgs(env, argv, argc);
+    CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
+
+    if (dryRun) {
+        ret = 0;
+        LEAVE();
+    }
+
+    /*
+     * PostJVMInit uses the class name as the application name for GUI purposes,
+     * for example, on OSX this sets the application name in the menu bar for
+     * both SWT and JavaFX. So we'll pass the actual application class here
+     * instead of mainClass as that may be a launcher or helper class instead
+     * of the application class.
+     */
+    PostJVMInit(env, appClass, vm);
+    CHECK_EXCEPTION_LEAVE(1);
+
+    /*
+     * The main method is invoked here so that extraneous java stacks are not in
+     * the application stack trace.
+     */
+    if (!invokeStaticMainWithArgs(env, mainClass, mainArgs) &&
+        !invokeInstanceMainWithArgs(env, mainClass, mainArgs) &&
+        !invokeStaticMainWithoutArgs(env, mainClass) &&
+        !invokeInstanceMainWithoutArgs(env, mainClass)) {
+        ret = 1;
+        LEAVE();
+    }
+
+    /*
+     * The launcher's exit code (in the absence of calls to
+     * System.exit) will be non-zero if main threw an exception.
+     */
+    ret = (*env)->ExceptionOccurred(env) == NULL ? 0 : 1;
+
+    LEAVE();
+}
+```
+
+此处, JVM 就完成初始化并执行 Java 的 `public static void main(String[])` 方法。

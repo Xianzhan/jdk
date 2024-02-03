@@ -422,17 +422,20 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   ThreadLocalStorage::init();
 
   // Initialize the output stream module
+  // 初始化输出流模块
   ostream_init();
 
   // Process java launcher properties.
   Arguments::process_sun_java_launcher_properties(args);
 
   // Initialize the os module
+  // 初始化操作系统模块
   os::init();
 
   MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
 
   // Record VM creation timing statistics
+  // 记录虚拟机创建时间统计信息
   TraceVmCreationTime create_vm_timer;
   create_vm_timer.start();
 
@@ -441,12 +444,15 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   Arguments::init_system_properties();
 
   // So that JDK version can be used as a discriminator when parsing arguments
+  // 以便在解析参数时可以使用 JDK 版本作为鉴别符
   JDK_Version_init();
 
   // Update/Initialize System properties after JDK version number is known
+  // JDK 版本号已知后，更新/初始化系统属性
   Arguments::init_version_specific_system_properties();
 
   // Make sure to initialize log configuration *before* parsing arguments
+  // 确保在解析参数之前初始化日志配置
   LogConfiguration::initialize(create_vm_timer.begin_time());
 
   // Parse arguments
@@ -455,10 +461,18 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (parse_result != JNI_OK) return parse_result;
 
   // Initialize NMT right after argument parsing to keep the pre-NMT-init window small.
+  // 在参数解析后立即初始化 NMT，以保持 NMT 初始化前窗口较小。
   MemTracker::initialize();
 
   os::init_before_ergo();
 
+    // - 根据参数选择 GC，若无，则选择默认 GC
+    // - 根据可用的物理内存设置堆大小
+    // - CDS 初始化
+    // - 初始化元空间标志和对齐
+    // - String 重复数据删除初始化
+    // - C1/C2 编译器初始化
+    // - 设置字节码重写标志
   jint ergo_result = Arguments::apply_ergo();
   if (ergo_result != JNI_OK) return ergo_result;
 
@@ -483,6 +497,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   TraceTime timer("Create VM", TRACETIME_LOG(Info, startuptime));
 
   // Initialize the os module after parsing the args
+  // 解析参数后初始化 os 模块
   jint os_init_2_result = os::init_2();
   if (os_init_2_result != JNI_OK) return os_init_2_result;
 
@@ -493,6 +508,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
+  // 安全点装置初始化
   SafepointMechanism::initialize();
 
   jint adjust_after_os_result = Arguments::adjust_after_os();
@@ -502,6 +518,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   ostream_init_log();
 
   // Launch -agentlib/-agentpath and converted -Xrun agents
+  // 加载代理
   JvmtiAgentList::load_agents();
 
   // Initialize Threads state
@@ -525,6 +542,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   JavaThread::_thread_oop_storage = OopStorageSet::create_strong("Thread OopStorage", mtThread);
 
   // Attach the main thread to this os thread
+  // 将主线程附加到这个 os 线程
   JavaThread* main_thread = new JavaThread();
   main_thread->set_thread_state(_thread_in_vm);
   main_thread->initialize_thread_current();
@@ -546,7 +564,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // crash Linux VM, see notes in os_linux.cpp.
   main_thread->stack_overflow_state()->create_stack_guard_pages();
 
+  // 监视器初始化
+
   // Initialize Java-Level synchronization subsystem
+  // 初始化 Java-Level 同步子系统
   ObjectMonitor::Initialize();
   ObjectSynchronizer::initialize();
 
@@ -561,6 +582,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Create WatcherThread as soon as we can since we need it in case
   // of hangs during error reporting.
+  // 尽快创建 WatcherThread，因为我们需要它以防万一
+  // 在错误报告期间挂起。
   WatcherThread::start();
 
   // Add main_thread to threads list to finish barrier setup with

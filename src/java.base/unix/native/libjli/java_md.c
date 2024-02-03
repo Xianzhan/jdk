@@ -645,6 +645,7 @@ void* SplashProcAddress(const char* name) {
 
 /*
  * Signature adapter for pthread_create() or thr_create().
+ * pthread_create() 或 thr_create() 的签名适配器。
  */
 static void* ThreadJavaMain(void* args) {
     return (void*)(intptr_t)JavaMain(args);

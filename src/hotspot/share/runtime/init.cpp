@@ -113,6 +113,7 @@ void vm_init_globals() {
 
 
 jint init_globals() {
+  // JVM 管理服务初始化
   management_init();
   JvmtiExport::initialize_oop_storage();
 #if INCLUDE_JVMTI
