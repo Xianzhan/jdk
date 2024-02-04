@@ -236,7 +236,8 @@ JavaMain(void* _args)
 
     // ifn->CreateJavaVM(vm, (void **)env, &args);
     // 执行 libjvm 的 JNI_CreateJavaVM() 函数
-    // 经过一系列原子保证后调用 threads.cpp#Threads::create_vm((JavaVMInitArgs*) args, &can_try_again)
+    // 经过一系列原子保证后调用
+    // threads.cpp#Threads::create_vm((JavaVMInitArgs*) args, &can_try_again)
     // - ostream_init(); 初始化输出流模块，日志
     // - os::init(); 初始化操作系统模块
     // - Arguments::init_system_properties(); 初始化系统属性
@@ -244,6 +245,7 @@ JavaMain(void* _args)
     // - Arguments::init_version_specific_system_properties(); 初始化版本系统属性
     // - LogConfiguration::initialize(create_vm_timer.begin_time()); VM 日志配置初始化
     // - MemTracker::initialize(); 初始化内存跟踪器
+
     // - Arguments::apply_ergo();
     //   - 根据参数选择 GC，若无，则选择默认 GC
     //   - 根据可用的物理内存设置堆大小
@@ -252,12 +254,15 @@ JavaMain(void* _args)
     //   - String 重复数据删除初始化
     //   - C1/C2 编译器初始化
     //   - 设置字节码重写标志
+
     // - os::init_2(); 本机操作系统的配置
     // - SafepointMechanism::initialize(); 安全点装置初始化
     // - JvmtiAgentList::load_agents(); 加载代理
     // - vm_init_globals(); vm 全局初始化
     // - JavaThread* main_thread = new JavaThread(); 将主线程附加到这个 os 线程
-    // - 监视器初始化
+    // - ObjectMonitor::Initialize(); 监视器初始化
+    // - ObjectSynchronizer::initialize();
+
     // - init_globals(); 初始化全局模块
     //   - management_init(); JVM 监控管理服务初始化
     //   - bytecodes_init(); 字节码初始化
@@ -268,11 +273,29 @@ JavaMain(void* _args)
     //   - initial_stubs_init();
     //   - universe_init();
     //   - ...
+
     // - init_globals2();
     //   - interpreter_init_code();
     //   - jni_handles_init();
     //   - MethodHandles::generate_adapters();
+
+    // - VMThread::create();
+    // - os::start_thread(vmthread); 启动 vm 线程
+    // - initialize_java_lang_classes(main_thread, CHECK_JNI_ERR); 初始化一些 lang 包的类
+    // - quicken_jni_functions();
+
+    // - Management::record_vm_init_completed();
+
+    // - ServiceThread::initialize(); 启动服务线程
+
+    // - MonitorDeflationThread::initialize();
+
     // - initialize_jsr292_core_classes(CHECK_JNI_ERR);
+
+    // - call_initPhase2(CHECK_JNI_ERR);
+    // - call_initPhase3(CHECK_JNI_ERR);
+
+    // - WatcherThread::run_all_tasks();
     if (!InitializeJVM(&vm, &env, &ifn)) {
         JLI_ReportErrorMessage(JVM_ERROR1);
         exit(1);

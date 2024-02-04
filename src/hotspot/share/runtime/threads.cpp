@@ -629,8 +629,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
     // Wait for the VM thread to become ready, and VMThread::run to initialize
     // Monitors can have spurious returns, must always check another state flag
+    // 等待虚拟机线程就绪，使用 VMThread::run 进行初始化
+    // 监察员可能会有虚假的回报，必须总是检查另一个状态的标识
     {
       MonitorLocker ml(Notify_lock);
+      // 启动 vm 线程
       os::start_thread(vmthread);
       while (!vmthread->is_running()) {
         ml.wait();
@@ -686,6 +689,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   HOTSPOT_VM_INIT_END();
 
   // record VM initialization completion time
+  // 记录虚拟机初始化完成时间
 #if INCLUDE_MANAGEMENT
   Management::record_vm_init_completed();
 #endif // INCLUDE_MANAGEMENT
@@ -713,6 +717,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Start the service thread
   // The service thread enqueues JVMTI deferred events and does various hashtable
   // and other cleanups.  Needs to start before the compilers start posting events.
+  // 启动服务线程
+  // 服务线程对 JVMTI 延迟事件进行排队，并执行各种散列表
+  // 还有其他清理工作。需要在编译器开始发布事件之前启动。
   ServiceThread::initialize();
 
   // Start the monitor deflation thread:
@@ -758,6 +765,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // This will initialize the module system.  Only java.base classes can be
   // loaded until phase 2 completes
+  // 这将初始化模块系统。阶段 2 只加载 java.base 模块的类
   call_initPhase2(CHECK_JNI_ERR);
 
   JFR_ONLY(Jfr::on_create_vm_2();)
@@ -770,9 +778,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   JvmtiExport::post_vm_start();
 
   // Final system initialization including security manager and system class loader
+  // 最后的系统初始化，包括安全管理器和系统类加载器
   call_initPhase3(CHECK_JNI_ERR);
 
   // cache the system and platform class loaders
+  // 缓存系统和平台类加载器
   SystemDictionary::compute_java_loaders(CHECK_JNI_ERR);
 
 #if INCLUDE_CDS

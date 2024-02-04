@@ -55,6 +55,8 @@ public:
 //
 // A single VMThread is used by other threads to offload heavy vm operations
 // like scavenge, garbage_collect etc.
+// 其他线程使用单个 VMThread 来卸载繁重的 vm 操作
+// 比如清道夫，垃圾收集等等。
 //
 
 class VMThread: public NamedThread {
