@@ -432,6 +432,19 @@ JavaMain(void* _args)
     /*
      * The main method is invoked here so that extraneous java stacks are not in
      * the application stack trace.
+     * 
+     * JEP 445: Unnamed Classes and Instance Main Methods (Preview)
+     * 
+     * 按以下顺序获取 main 方法
+     * 
+     * ```java
+     * static void main(String[] args);
+     * void main(String[] args);
+     * static void main();
+     * void main();
+     * ```
+     * 
+     * 执行 jni_invoke_static | jni_invoke_nonstatic
      */
     if (!invokeStaticMainWithArgs(env, mainClass, mainArgs) &&
         !invokeInstanceMainWithArgs(env, mainClass, mainArgs) &&

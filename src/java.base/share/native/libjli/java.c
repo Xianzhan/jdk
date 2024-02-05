@@ -646,6 +646,14 @@ JavaMain(void* _args)
     /*
      * The main method is invoked here so that extraneous java stacks are not in
      * the application stack trace.
+     * 
+     * 按以下顺序获取 main 方法
+     * ```java
+     * static void main(String[] args);
+     * void main(String[] args);
+     * static void main();
+     * void main();
+     * ```
      */
     if (!invokeStaticMainWithArgs(env, mainClass, mainArgs) &&
         !invokeInstanceMainWithArgs(env, mainClass, mainArgs) &&
