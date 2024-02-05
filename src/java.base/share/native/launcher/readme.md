@@ -301,17 +301,20 @@ JavaMain(void* _args)
         exit(1);
     }
 
+    // `java -XshowSettings`
     if (showSettings != NULL) {
         ShowSettings(env, showSettings);
         CHECK_EXCEPTION_LEAVE(1);
     }
 
+    // `java --show-resolved-modules`
     // show resolved modules and continue
     if (showResolvedModules) {
         ShowResolvedModules(env);
         CHECK_EXCEPTION_LEAVE(1);
     }
 
+    // `java --list-modules`
     // list observable modules, then exit
     if (listModules) {
         ListModules(env);
@@ -319,6 +322,7 @@ JavaMain(void* _args)
         LEAVE();
     }
 
+    // `java [-d|--describe-module|--describe-module=] java.base[other.module]`
     // describe a module, then exit
     if (describeModule != NULL) {
         DescribeModule(env, describeModule);
@@ -326,6 +330,7 @@ JavaMain(void* _args)
         LEAVE();
     }
 
+    // `java [-version|--version|-showversion|--show-version]`
     if (printVersion || showVersion) {
         PrintJavaVersion(env);
         CHECK_EXCEPTION_LEAVE(0);
