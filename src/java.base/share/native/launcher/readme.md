@@ -399,6 +399,13 @@ JavaMain(void* _args)
      * This method also correctly handles launching existing JavaFX
      * applications that may or may not have a Main-Class manifest entry.
      */
+    // LauncherHelper::checkAndLoadMain
+    // mainClass = scloader.loadClass(cn);
+    //   - findLoadedClass0(String name);
+    //   - ClassLoader.c#Java_java_lang_ClassLoader_findLoadedClass0
+    //   - jvm.cpp#JVM_FindLoadedClass
+    //   - systemDictionary.cpp#SystemDictionary::find_instance_or_array_klass
+    //   - systemDictionary.cpp#SystemDictionary::find_instance_klass
     mainClass = LoadMainClass(env, mode, what);
     CHECK_EXCEPTION_NULL_LEAVE(mainClass);
     /*

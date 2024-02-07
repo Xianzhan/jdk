@@ -1101,8 +1101,10 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
   if (str_len > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit
     // into the constant pool.
+    // 类名长度限制
     return nullptr;
   }
+  // 查看全局变量表的名字
   TempNewSymbol klass_name = SymbolTable::new_symbol(str, str_len);
 
   // Security Note:
