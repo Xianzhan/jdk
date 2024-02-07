@@ -464,4 +464,205 @@ JavaMain(void* _args)
 }
 ```
 
+# [java.c#invokeStaticMainWithArgs](java.c)
+
+```c
+/*
+ * Invoke a static main with arguments. Returns 1 (true) if successful otherwise
+ * processes the pending exception from GetStaticMethodID and returns 0 (false).
+ */
+int
+invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
+    // 找到 `static void main(String[] args)` 方法
+    jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
+                                  "([Ljava/lang/String;)V");
+    // 执行 `static` 方法
+    (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
+    return 1;
+}
+```
+
+**Hotspot**
+
+# [jni.cpp#jni_CallStaticVoidMethod](../../../../hotspot/share/prims/jni.cpp)
+
+```c
+JNI_ENTRY(void, jni_CallStaticVoidMethod(JNIEnv *env, jclass cls, jmethodID methodID, ...))
+  HOTSPOT_JNI_CALLSTATICVOIDMETHOD_ENTRY(env, cls, (uintptr_t) methodID);
+  DT_VOID_RETURN_MARK(CallStaticVoidMethod);
+
+  va_list args;
+  va_start(args, methodID);
+  JavaValue jvalue(T_VOID);
+  JNI_ArgumentPusherVaArg ap(methodID, args);
+  jni_invoke_static(env, &jvalue, nullptr, JNI_STATIC, methodID, &ap, CHECK);
+  va_end(args);
+JNI_END
+```
+
+# [jni.cpp#jni_invoke_static](../../../../hotspot/share/prims/jni.cpp)
+
+```c
+static void jni_invoke_static(JNIEnv *env, JavaValue* result, jobject receiver, JNICallType call_type, jmethodID method_id, JNI_ArgumentPusher *args, TRAPS) {
+  methodHandle method(THREAD, Method::resolve_jmethod_id(method_id));
+
+  // Create object to hold arguments for the JavaCall, and associate it with
+  // the jni parser
+  ResourceMark rm(THREAD);
+  int number_of_parameters = method->size_of_parameters();
+  JavaCallArguments java_args(number_of_parameters);
+
+  assert(method->is_static(), "method should be static");
+
+  // Fill out JavaCallArguments object
+  args->push_arguments_on(&java_args);
+  // Initialize result type
+  result->set_type(args->return_type());
+
+  // Invoke the method. Result is returned as oop.
+  JavaCalls::call(result, method, &java_args, CHECK);
+
+  // Convert result
+  if (is_reference_type(result->get_type())) {
+    result->set_jobject(JNIHandles::make_local(THREAD, result->get_oop()));
+  }
+}
+```
+
+# [javaCalls.cpp#JavaCalls::call](../../../../hotspot/share/runtime/javaCalls.cpp)
+
+```c
+void JavaCalls::call(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
+  // Check if we need to wrap a potential OS exception handler around thread.
+  // This is used for e.g. Win32 structured exception handlers.
+  // Need to wrap each and every time, since there might be native code down the
+  // stack that has installed its own exception handlers.
+  os::os_exception_wrapper(call_helper, result, method, args, THREAD);
+}
+
+void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS) {
+
+  JavaThread* thread = THREAD;
+  assert(method.not_null(), "must have a method to call");
+  assert(!SafepointSynchronize::is_at_safepoint(), "call to Java code during VM operation");
+  assert(!thread->handle_area()->no_handle_mark_active(), "cannot call out to Java here");
+
+  // Verify the arguments
+  if (JVMCI_ONLY(args->alternative_target().is_null() &&) (DEBUG_ONLY(true ||) CheckJNICalls)) {
+    args->verify(method, result->get_type());
+  }
+  // Ignore call if method is empty
+  if (JVMCI_ONLY(args->alternative_target().is_null() &&) method->is_empty_method()) {
+    assert(result->get_type() == T_VOID, "an empty method must return a void value");
+    return;
+  }
+
+#ifdef ASSERT
+  { InstanceKlass* holder = method->method_holder();
+    // A klass might not be initialized since JavaCall's might be used during the executing of
+    // the <clinit>. For example, a Thread.start might start executing on an object that is
+    // not fully initialized! (bad Java programming style)
+    assert(holder->is_linked(), "rewriting must have taken place");
+  }
+#endif
+
+  CompilationPolicy::compile_if_required(method, CHECK);
+
+  // Since the call stub sets up like the interpreter we call the from_interpreted_entry
+  // so we can go compiled via a i2c. Otherwise initial entry method will always
+  // run interpreted.
+  address entry_point = method->from_interpreted_entry();
+  if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
+    entry_point = method->interpreter_entry();
+  }
+
+  // Figure out if the result value is an oop or not (Note: This is a different value
+  // than result_type. result_type will be T_INT of oops. (it is about size)
+  BasicType result_type = runtime_type_from(result);
+  bool oop_result_flag = is_reference_type(result->get_type());
+
+  // Find receiver
+  Handle receiver = (!method->is_static()) ? args->receiver() : Handle();
+
+  // When we reenter Java, we need to re-enable the reserved/yellow zone which
+  // might already be disabled when we are in VM.
+  thread->stack_overflow_state()->reguard_stack_if_needed();
+
+  // Check that there are shadow pages available before changing thread state
+  // to Java. Calculate current_stack_pointer here to make sure
+  // stack_shadow_pages_available() and map_stack_shadow_pages() use the same sp.
+  address sp = os::current_stack_pointer();
+  if (!os::stack_shadow_pages_available(THREAD, method, sp)) {
+    // Throw stack overflow exception with preinitialized exception.
+    Exceptions::throw_stack_overflow_exception(THREAD, __FILE__, __LINE__, method);
+    return;
+  } else {
+    // Touch pages checked if the OS needs them to be touched to be mapped.
+    os::map_stack_shadow_pages(sp);
+  }
+
+  // do call
+  { JavaCallWrapper link(method, receiver, result, CHECK);
+    { HandleMark hm(thread);  // HandleMark used by HandleMarkCleaner
+
+      // NOTE: if we move the computation of the result_val_address inside
+      // the call to call_stub, the optimizer produces wrong code.
+      intptr_t* result_val_address = (intptr_t*)(result->get_value_addr());
+      intptr_t* parameter_address = args->parameters();
+#if INCLUDE_JVMCI
+      // Gets the alternative target (if any) that should be called
+      Handle alternative_target = args->alternative_target();
+      if (!alternative_target.is_null()) {
+        // Must extract verified entry point from HotSpotNmethod after VM to Java
+        // transition in JavaCallWrapper constructor so that it is safe with
+        // respect to nmethod sweeping.
+        address verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
+        if (verified_entry_point != nullptr) {
+          thread->set_jvmci_alternate_call_target(verified_entry_point);
+          entry_point = method->adapter()->get_i2c_entry();
+        }
+      }
+#endif
+      StubRoutines::call_stub()(
+        (address)&link,
+        // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)
+        // 函数返回值地址
+        result_val_address,          // see NOTE above (compiler problem)
+        // 函数返回类型
+        result_type,
+        // 当前要执行的方法。通过此参数可以获取到 Java 方法所有的元数据信息，包括最重要的字节码信息，这样就可以根据字节码信息解释执行这个方法了
+        method(),
+        // HotSpot 每次在调用 Java 函数时，必然会调用 CallStub 函数指针，
+        // 这个函数指针的值取自 _call_stub_entry，HotSpot 通过 _call_stub_entry 指向被调用函数地址。
+        // 在调用函数之前，必须要先经过 entry_point，
+        // HotSpot 实际是通过 entry_point 从 method() 对象上拿到 Java 方法对应的第1个字节码命令，这也是整个函数的调用入口
+        entry_point,
+        // 描述 Java 函数的入参信息
+        parameter_address,
+        // 描述 Java 函数的入参数量
+        args->size_of_parameters(),
+        // 当前线程对象
+        CHECK
+      );
+
+      result = link.result();  // circumvent MS C++ 5.0 compiler bug (result is clobbered across call)
+      // Preserve oop return value across possible gc points
+      if (oop_result_flag) {
+        thread->set_vm_result(result->get_oop());
+      }
+    }
+  } // Exit JavaCallWrapper (can block - potential return oop must be preserved)
+
+  // Check if a thread stop or suspend should be executed
+  // The following assert was not realistic.  Thread.stop can set that bit at any moment.
+  //assert(!thread->has_special_runtime_exit_condition(), "no async. exceptions should be installed");
+
+  // Restore possible oop return
+  if (oop_result_flag) {
+    result->set_oop(thread->vm_result());
+    thread->set_vm_result(nullptr);
+  }
+}
+```
+
 此处, JVM 就完成初始化并执行 Java 的 `public static void main(String[])` 方法。
