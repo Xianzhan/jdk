@@ -752,6 +752,9 @@ InstanceKlass* SystemDictionary::find_instance_klass(Thread* current,
   // The result of this call should be consistent with the result
   // of the call to resolve_instance_class_or_null().
   // See evaluation 6790209 and 4474172 for more details.
+  // 这个调用的结果应该与
+  // resolve_instance_class_or_null() 调用的结果一致。
+  // 更多细节见评估 6790209 和 4474172。
   oop class_loader_oop = java_lang_ClassLoader::non_reflection_class_loader(class_loader());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data_or_null(class_loader_oop);
 
@@ -761,6 +764,7 @@ InstanceKlass* SystemDictionary::find_instance_klass(Thread* current,
     return nullptr;
   }
 
+  // 所有已加载的 InstanceKlass 实例都会存储到 dictionary 中
   Dictionary* dictionary = loader_data->dictionary();
   return dictionary->find(current, class_name, protection_domain);
 }
