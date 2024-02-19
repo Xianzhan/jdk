@@ -38,12 +38,8 @@
       - [utilities](./src/hotspot/share/utilities/readme.md): 内部工具类和公共函数
   - java.base
     - [`java Main` launcher 启动](src/java.base/share/native/launcher/readme.md)
-    - share
-      - classes
-        - java
-          - [net 网络处理](src/java.base/share/classes/java/net/readme.md)
   - [utils](src/utils/readme.md)
-  - [test](src/test/readme.md)<br/>
+  - [test](test/readme.md)
 
 # 名词解释
 

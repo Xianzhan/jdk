@@ -291,6 +291,8 @@ class StackObj {
 
 // Base class for objects stored in Metaspace.
 // Calling delete will result in fatal error.
+// 存储在元空间中的对象的基类。
+// 调用 delete 将导致致命错误。
 //
 // Do not inherit from something with a vptr because this class does
 // not introduce one.  This class is used to allocate both shared read-only
