@@ -54,3 +54,43 @@ C++ 类实例通过保存 typeinfo 指针实现 RTTI，通过 vtbl 指针实现�
 - [Method](./method.hpp)
 
 `Method` 用于表示一个 Java 方法，因为一个应用有成千上万个方法，因此保证 `Method` 类在内存中短小非常有必要。为了本地 GC 方便，`Method` 把所有的指针变量和方法大小放在 `Method` 内存布局的前面，方法本身的不可变数据如字节码用 `ConstMethod` 表示，可变数据如 `Profile` 统计的性能数据等用 `MethodData` 表示，都通过指针访问。如果是本地方法，`Method` 内存结构的最后是 `native_function` 和 `signature_handler`，按照解释器的要求，这两个必须在固定的偏移处。`Method` 没有子类。
+
+# oopDesc
+
+- [oopDesc](./oop.hpp)
+
+```cpp
+class oopDesc {
+    private:
+        // 对象头，volatile 保证对象状态在各 CPU 同步
+        volatile markWord _mark;
+        union _metadata {
+            Klass* _klass;
+            narrowKlass _compressed_klass;
+        } _metadata;
+}
+```
+
+## arrayOopDesc
+
+- [arrayOopDesc](./arrayOop.hpp)
+
+所有数组 `oopDesc` 的基类，保存了数组的长度。
+
+### objArrayOopDesc
+
+- [objArrayOopDesc](./objArrayOop.hpp)
+
+用于表示 Java 对象的数组。
+
+### typeArrayOopDesc
+
+- [typeArrayOopDesc](./typeArrayOop.hpp)
+
+用于表示基本类型的数组，如：`int`/`long`
+
+## instanceOopDesc
+
+- [instanceOopDesc](./instanceOop.hpp)
+
+表示普通 Java 对象，由 `new` 关键字创建，即 Java 每次调用 `new`，都会创建一个 `instanceOopDesc`

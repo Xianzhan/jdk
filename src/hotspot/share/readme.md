@@ -19,7 +19,7 @@
 - [services](./services/readme.md): JMX 接口
 - [utilities](./utilities/readme.md): 内部工具类和公共函数
 
-# 类继承结构
+# Klass 模型
 
 - [MetaspaceObj](./memory/readme.md#MetaspaceObj)
   - [Metadata](./oops/readme.md#Metadata)
@@ -33,3 +33,12 @@
         - [InstanceRefKlass](./oops/readme.md#InstanceRefKlass)
     
     - [Method](./oops/readme.md#Method)
+
+# Oop 模型
+
+- [oopDesc](./oops/readme.md#oopDesc)
+  - [arrayOopDesc](./oops/readme.md#arrayOopDesc)
+    - [objArrayOopDesc](./oops/readme.md#objArrayOopDesc)
+    - [typeArrayOopDesc](./oops/readme.md#typeArrayOopDesc)
+  - [instanceOopDesc](./oops/readme.md#instanceOopDesc)
+
