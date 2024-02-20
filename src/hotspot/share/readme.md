@@ -34,6 +34,8 @@
     
     - [Method](./oops/readme.md#Method)
 
+  - [Symbol](./oops/readme.md#Symbol)
+
 # Oop 模型
 
 - [oopDesc](./oops/readme.md#oopDesc)
