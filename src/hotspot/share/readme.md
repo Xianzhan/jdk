@@ -34,6 +34,8 @@
     
     - [Method](./oops/readme.md#Method)
 
+    - [ConstantPool](./oops/readme.md#ConstantPool)
+
   - [Symbol](./oops/readme.md#Symbol)
 
 # Oop 模型

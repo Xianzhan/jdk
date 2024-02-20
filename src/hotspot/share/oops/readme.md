@@ -55,6 +55,12 @@ C++ 类实例通过保存 typeinfo 指针实现 RTTI，通过 vtbl 指针实现�
 
 `Method` 用于表示一个 Java 方法，因为一个应用有成千上万个方法，因此保证 `Method` 类在内存中短小非常有必要。为了本地 GC 方便，`Method` 把所有的指针变量和方法大小放在 `Method` 内存布局的前面，方法本身的不可变数据如字节码用 `ConstMethod` 表示，可变数据如 `Profile` 统计的性能数据等用 `MethodData` 表示，都通过指针访问。如果是本地方法，`Method` 内存结构的最后是 `native_function` 和 `signature_handler`，按照解释器的要求，这两个必须在固定的偏移处。`Method` 没有子类。
 
+## ConstantPool
+
+- [ConstantPool](./constantPool.hpp)
+
+每个 `Klass` 都有对应的 `ConstantPool`，两者是一一对应的。常量池的数据大部分是在 class 文件解析的时候写入的，可以安全访问；但是 `CONSTANT_Class_info` 类型的常量数据是在这个类被解析时修改，这时只能通过解析状态判断这条数据是否修改完成。
+
 # Symbol
 
 - [Symbol](./symbol.hpp)
