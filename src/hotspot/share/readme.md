@@ -46,3 +46,6 @@
     - [typeArrayOopDesc](./oops/readme.md#typeArrayOopDesc)
   - [instanceOopDesc](./oops/readme.md#instanceOopDesc)
 
+# Handle
+
+- [Handle](./runtime/readme.md#Handle)
