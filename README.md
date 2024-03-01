@@ -43,6 +43,7 @@
 
 # 名词解释
 
+- CDS: [Class-Data Sharing(CDS)](https://openjdk.org/jeps/250) or [Cache Data Store](https://openjdk.org/jeps/8320264)
 - gmk: [GNU MAKE FILE](https://www.gnu.org/software/make/manual/make.html)
 
 # Welcome to the JDK!
