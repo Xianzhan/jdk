@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,24 +21,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHARED_GCSTATS_HPP
-#define SHARE_GC_SHARED_GCSTATS_HPP
+package jdk.internal.access;
 
-#include "gc/shared/gcUtil.hpp"
+import javax.security.auth.x500.X500Principal;
+import sun.security.x509.X500Name;
 
-class GCStats : public CHeapObj<mtGC> {
- protected:
-  // Avg amount promoted; used for avoiding promotion undo
-  // This class does not update deviations if the sample is zero.
-  AdaptivePaddedNoZeroDevAverage*   _avg_promoted;
-
- public:
-  GCStats();
-
-  AdaptivePaddedNoZeroDevAverage*  avg_promoted() const { return _avg_promoted; }
-};
-
-#endif // SHARE_GC_SHARED_GCSTATS_HPP
+public interface JavaxSecurityAccess {
+    X500Name asX500Name(X500Principal p);
+    X500Principal asX500Principal(X500Name n);
+}
