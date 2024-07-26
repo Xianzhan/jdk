@@ -24,6 +24,10 @@
 - CDS: [Class-Data Sharing(CDS)](https://openjdk.org/jeps/250) or [Cache Data Store](https://openjdk.org/jeps/8320264)
 - gmk: [GNU MAKE FILE](https://www.gnu.org/software/make/manual/make.html)
 
+# 环境变量
+
+[_JAVA_LAUNCHER_DEBUG](./README_env.md#_java_launcher_debug)
+
 # Welcome to the JDK!
 
 For build instructions please see the
