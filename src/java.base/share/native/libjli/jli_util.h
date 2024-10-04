@@ -113,6 +113,9 @@ JLI_SetTraceLauncher();
 
 jboolean JLI_IsTraceLauncher();
 
+// This is defined in link_type.c due to linking restraints
+jboolean JLI_IsStaticallyLinked();
+
 /*
  * JLI_List - char*(字符串) 的动态列表
  * JLI_List - a dynamic list of char*
