@@ -69,7 +69,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -526,7 +526,7 @@ JNI_ENTRY(jint, jni_ThrowNew(JNIEnv *env, jclass clazz, const char *message))
   jint ret = JNI_OK;
   DT_RETURN_MARK(ThrowNew, jint, (const jint&)ret);
 
-  InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
+  InstanceKlass* k = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(clazz));
   Symbol*  name = k->name();
   Handle class_loader (THREAD,  k->class_loader());
   THROW_MSG_LOADER_(name, (char *)message, class_loader, JNI_OK);
@@ -2948,7 +2948,7 @@ static bool initializeDirectBufferSupport(JNIEnv* env, JavaThread* thread) {
     return false;
   }
 
-  if (Atomic::cmpxchg(&directBufferSupportInitializeStarted, 0, 1) == 0) {
+  if (AtomicAccess::cmpxchg(&directBufferSupportInitializeStarted, 0, 1) == 0) {
     if (!lookupDirectBufferClasses(env)) {
       directBufferSupportInitializeFailed = 1;
       return false;
@@ -3418,7 +3418,7 @@ void copy_jni_function_table(const struct JNINativeInterface_ *new_jni_NativeInt
   intptr_t *a = (intptr_t *) jni_functions();
   intptr_t *b = (intptr_t *) new_jni_NativeInterface;
   for (uint i=0; i <  sizeof(struct JNINativeInterface_)/sizeof(void *); i++) {
-    Atomic::store(a++, *b++);
+    AtomicAccess::store(a++, *b++);
   }
 }
 
@@ -3534,18 +3534,18 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
   jint result = JNI_ERR;
   DT_RETURN_MARK(CreateJavaVM, jint, (const jint&)result);
 
-  // We're about to use Atomic::xchg for synchronization.  Some Zero
+  // We're about to use AtomicAccess::xchg for synchronization.  Some Zero
   // platforms use the GCC builtin __sync_lock_test_and_set for this,
   // but __sync_lock_test_and_set is not guaranteed to do what we want
   // on all architectures.  So we check it works before relying on it.
 #if defined(ZERO) && defined(ASSERT)
   {
     jint a = 0xcafebabe;
-    jint b = Atomic::xchg(&a, (jint) 0xdeadbeef);
+    jint b = AtomicAccess::xchg(&a, (jint) 0xdeadbeef);
     void *c = &a;
-    void *d = Atomic::xchg(&c, &b);
-    assert(a == (jint) 0xdeadbeef && b == (jint) 0xcafebabe, "Atomic::xchg() works");
-    assert(c == &b && d == &a, "Atomic::xchg() works");
+    void *d = AtomicAccess::xchg(&c, &b);
+    assert(a == (jint) 0xdeadbeef && b == (jint) 0xcafebabe, "AtomicAccess::xchg() works");
+    assert(c == &b && d == &a, "AtomicAccess::xchg() works");
   }
 #endif // ZERO && ASSERT
 
@@ -3561,13 +3561,18 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
   // 线程。我们只进行原子比较和交换以确保
   // 一个线程一次可以调用这个方法
 
-  // We use Atomic::xchg rather than Atomic::add/dec since on some platforms
+  // We use AtomicAccess::xchg rather than AtomicAccess::add/dec since on some platforms
   // the add/dec implementations are dependent on whether we are running
+<<<<<<< HEAD
   // on a multiprocessor Atomic::xchg does not have this problem.
   // 在某些平台上，我们使用 Atomic::xchg 而不是 Atomic::add/dec
   // add/dec 的实现取决于我们是否正在运行
   // 在多处理器上，Atomic::xchg 没有这个问题。
   if (Atomic::xchg(&vm_created, IN_PROGRESS) != NOT_CREATED) {
+=======
+  // on a multiprocessor AtomicAccess::xchg does not have this problem.
+  if (AtomicAccess::xchg(&vm_created, IN_PROGRESS) != NOT_CREATED) {
+>>>>>>> upstream/master
     return JNI_EEXIST;   // already created, or create attempt in progress
                          // 已经创建，或者正在尝试创建
   }
@@ -3577,12 +3582,16 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
   // cleared here. If a previous creation attempt succeeded and we then
   // destroyed that VM, we will be prevented from trying to recreate
   // the VM in the same process, as the value will still be 0.
+<<<<<<< HEAD
   // 如果先前的创建尝试失败，但可以安全地重试，
   // 那么 safe_to_recreate_vm 将被重置为 1
   // 清除这里。如果之前的创建尝试成功了，然后我们
   // 销毁该虚拟机，我们将无法尝试重新创建
   // 在同一进程中的虚拟机，因为该值仍然为 0。
   if (Atomic::xchg(&safe_to_recreate_vm, 0) == 0) {
+=======
+  if (AtomicAccess::xchg(&safe_to_recreate_vm, 0) == 0) {
+>>>>>>> upstream/master
     return JNI_ERR;
   }
 
@@ -3614,7 +3623,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     *vm = (JavaVM *)(&main_vm);
     *(JNIEnv**)penv = thread->jni_environment();
     // mark creation complete for other JNI ops
-    Atomic::release_store(&vm_created, COMPLETE);
+    AtomicAccess::release_store(&vm_created, COMPLETE);
 
 #if INCLUDE_JVMCI
     if (EnableJVMCI) {
@@ -3680,7 +3689,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     // reset vm_created last to avoid race condition. Use OrderAccess to
     // control both compiler and architectural-based reordering.
     assert(vm_created == IN_PROGRESS, "must be");
-    Atomic::release_store(&vm_created, NOT_CREATED);
+    AtomicAccess::release_store(&vm_created, NOT_CREATED);
   }
 
   // Flush stdout and stderr before exit.
