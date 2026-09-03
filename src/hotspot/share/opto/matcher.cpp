@@ -168,7 +168,7 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
 
 // Array of RegMask, one per returned values (inline type instances can
 // be returned as multiple return values, one per field)
-RegMask* Matcher::return_values_mask(const TypeFunc* tf) {
+RegMask* Matcher::return_values_mask(const TypeFunc* tf) const {
   const TypeTuple* range = tf->range_cc();
   uint cnt = range->cnt() - TypeFunc::Parms;
   if (cnt == 0) {
@@ -1089,11 +1089,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
               }
               if (m == nullptr) {
                 // Convert to machine-dependent projection
-                RegMask* mask = nullptr;
-                if (n->in(0)->is_Call() && n->in(0)->as_Call()->tf()->returns_inline_type_as_fields()) {
-                  mask = return_values_mask(n->in(0)->as_Call()->tf());
-                }
-                m = n->in(0)->as_Multi()->match(n->as_Proj(), this, mask);
+                m = n->in(0)->as_Multi()->match(n->as_Proj(), this);
                 NOT_PRODUCT(record_new2old(m, n);)
               }
               if (m->in(0) != nullptr) // m might be top
@@ -2147,10 +2143,7 @@ void Matcher::find_shared(Node* n) {
 
       // Now hack a few special opcodes
       uint opcode = n->Opcode();
-      bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->matcher_find_shared_post_visit(this, n, opcode);
-      if (!gc_handled) {
-        find_shared_post_visit(n, opcode);
-      }
+      find_shared_post_visit(n, opcode);
     }
     else {
       ShouldNotReachHere();
@@ -2871,8 +2864,7 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
         xop == Op_CompareAndSwapL ||
         xop == Op_CompareAndSwapP ||
         xop == Op_CompareAndSwapN ||
-        xop == Op_CompareAndSwapI ||
-        BarrierSet::barrier_set()->barrier_set_c2()->matcher_is_store_load_barrier(x, xop)) {
+        xop == Op_CompareAndSwapI) {
       return true;
     }
 
